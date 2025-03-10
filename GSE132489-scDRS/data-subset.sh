@@ -1,0 +1,2 @@
+head /u/project/geschwind/lixinzhe/data/Liu_et_al_2021_methylation_gse132489/randomized_mch_gene_fraction.csv -n 30001 > /u/project/pasaniuc/lixinzhe/data/Liu_et_al_2021_methylation_gse132489/subset_randomized_mch_gene_fraction.csv
+head /u/project/geschwind/lixinzhe/data/Liu_et_al_2021_methylation_gse132489/randomized_mcg_gene_fraction.csv -n 30001 > /u/project/pasaniuc/lixinzhe/data/Liu_et_al_2021_methylation_gse132489/subset_randomized_mcg_gene_fraction.csv
