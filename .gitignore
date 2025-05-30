@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.egg-info/
+*.egg
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Packages and virtual environments
+.env/
+.venv/
+env/
+venv/
+*.env
+.Python
+
+# Build outputs
+build/
+dist/
+*.whl
+
+# VSCode, PyCharm, etc.
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+.history/
+
+# Coverage/test artifacts
+htmlcov/
+.tox/
+.nox/
+.coverage
+.pytest_cache/
+
+# Test output
+*.out
+*.err
+
+# Personal or large data files
+*.h5ad
+*.csv
+*.tsv
+*.gz
+*.zip
+*.tar.gz
+*.hdf5
+*.bam
+*.vcf
