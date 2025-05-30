@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+# import packages:
+import fire
+import pandas as pd
+import numpy as np
+from statsmodels.stats.multitest import multipletests
+import met_scdrs
+from typing import Dict, List
+import scanpy as sc
+import os
+import time
+
+### HEADER ########################################################################################
+def get_cli_head():
+    MASTHEAD = "******************************************************************************\n"
+    MASTHEAD += "* methylation single-cell disease relevance score (met-scDRS)\n"
+    MASTHEAD += "* Version %s\n" % met_scdrs.__version__
+    MASTHEAD += "* Martin Jinye Zhang and Kangcheng Hou\n"
+    MASTHEAD += "* HSPH / Broad Institute / UCLA\n"
+    MASTHEAD += "* MIT License\n"
+    MASTHEAD += "******************************************************************************\n"
+    return MASTHEAD
+
