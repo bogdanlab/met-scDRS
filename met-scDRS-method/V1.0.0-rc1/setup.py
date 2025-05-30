@@ -34,8 +34,10 @@ setuptools.setup(
         "fire>=0.4.0",
         "pytest>=6.2.0",
     ],
-    scripts=[
-        "bin/met-scdrs",
-    ],
+    entry_points={
+        'console_scripts': [
+            'met-scdrs = met_scdrs.cli:main',
+        ],
+    },
     include_package_data=True,
 )
