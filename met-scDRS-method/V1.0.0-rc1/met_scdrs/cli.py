@@ -1,7 +1,7 @@
 # met_scdrs/cli.py
 
 import argparse
-from met_scdrs.core import score_cells
+import met_scdrs
 
 def main():
     parser = argparse.ArgumentParser()
@@ -9,4 +9,4 @@ def main():
     args = parser.parse_args()
 
     print(f"[Computing]")
-    score_cells(args.input)
+    met_scdrs.score_cells(args.input)
