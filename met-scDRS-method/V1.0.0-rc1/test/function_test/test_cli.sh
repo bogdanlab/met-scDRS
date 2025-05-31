@@ -1,0 +1,11 @@
+met-scdrs compute_score \
+    --h5ad_file 'random_h5ad' \
+    --h5ad_species human \
+    --gs_file 'random_gs' \
+    --gs_species mouse \
+    --out_folder 'random_out' \
+    --ctrl_match_opt mean_var \
+    --weight_opt inv_std \
+    --n_ctrl 1000 \
+    --flag_return_ctrl_raw_score False \
+    --flag_return_ctrl_norm_score True
