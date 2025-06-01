@@ -1,7 +1,19 @@
 from pathlib import Path
-import scanpy as sc
-import anndata
 import numpy as np
+import scipy as sp
+import pandas as pd
+import numbers
+import seaborn as sns
+from statsmodels.stats.multitest import multipletests
+import scanpy as sc
+import os
+import anndata
+import matplotlib.transforms as mtrans
+import matplotlib.pyplot as plt
+from typing import List, Dict
+from anndata import read_h5ad
+import fnmatch
+import matplotlib.patches as patches
 
 def convert_species_name(species):
     if species in ["Mouse", "mouse", "Mus_musculus", "mus_musculus", "mmusculus"]:
@@ -27,7 +39,7 @@ def load_h5ad(h5ad_file : str):
         Path to the single-cell `.h5ad` file. The `.X` attribute should contain a cell-by-gene 
         methylation matrix.
     """
-    adata = anndata.read_h5ad(h5ad_file)
+    adata = read_h5ad(h5ad_file)
     
     # check inputs (1) no NaN in adata.X
     if np.isnan(adata.X.sum()):
@@ -35,3 +47,127 @@ def load_h5ad(h5ad_file : str):
             "h5ad expression matrix should not contain NaN. Please impute them beforehand."
         )
     return adata
+
+def load_homolog_mapping(src_species: str, dst_species: str) -> dict:
+    """Load gene homologs between mouse and human.
+
+    Parameters
+    ----------
+    src_species : str
+        Source species. One of 'mmusculus', 'mouse', 'hsapiens', or 'human'.
+    dst_species : str
+        Destination species. One of 'mmusculus', 'mouse', 'hsapiens', or 'human'.
+        Cannot be the same as `src_species`.
+
+    Returns
+    -------
+    dic_map : dict
+        Dictionary of gene homologs (gene symbol).
+    """
+
+    src_species = convert_species_name(src_species)
+    dst_species = convert_species_name(dst_species)
+
+    assert src_species != dst_species, "src and dst cannot be the same"
+
+    df_hom = pd.read_csv(
+        os.path.join(os.path.dirname(__file__), "data/mouse_human_homologs.txt"),
+        sep="\t",
+    )
+    if (src_species == "hsapiens") & (dst_species == "mmusculus"):
+        dic_map = {
+            x: y for x, y in zip(df_hom["HUMAN_GENE_SYM"], df_hom["MOUSE_GENE_SYM"])
+        }
+    elif (src_species == "mmusculus") & (dst_species == "hsapiens"):
+        dic_map = {
+            x: y for x, y in zip(df_hom["MOUSE_GENE_SYM"], df_hom["HUMAN_GENE_SYM"])
+        }
+    else:
+        raise NotImplementedError(
+            f"gene conversion from {src_species} to {dst_species} is not supported"
+        )
+
+    return dic_map
+
+
+def load_gs(
+    gs_path: str,
+    src_species: str = None,
+    dst_species: str = None,
+    to_intersect: List[str] = None,
+) -> dict:
+    """Load the gene set file (.gs file).
+
+    Parameters
+    ----------
+    gs_path : str
+        Path to the gene set file with two columns 'TRAIT' and 'GENESET', separated by tab.
+        'TRAIT' column contain trait names. 'GENESET' column contain gene names (matching
+        expression matrix) and gene weights (for weighted gene set). For unweighted gene set,
+        the 'GENESET' column contains only gene names separated by comma, e.g.,
+        "<gene1>,<gene2>,<gene3>". For weighted gene set, the 'GENESET' column contains
+        gene names and weights, e.g., "<gene1>:<weight1>,<gene2>:<weight2>,<gene3>:<weight3>".
+    src_species : str, default=None
+        Source species, must be either 'mmusculus' or 'hsapiens' if not None
+    dst_species : str, default=None
+        Destination species, must be either 'mmusculus' or 'hsapiens' if not None
+    to_intersect : List[str], default=None.
+        Gene list to intersect with the input .gs file.
+
+    Returns
+    -------
+    dict_gs : dict
+        Dictionary of gene sets: {
+            trait1: (gene_list, gene_weight_list),
+            trait2: (gene_list, gene_weight_list),
+            ...
+        }
+    """
+
+    assert (src_species is None) == (
+        dst_species is None
+    ), "src_species and dst_species must be both None or not None"
+
+    # Load homolog map dict_map; only needed when src_species and dst_species
+    # are not None and different.
+    if ((src_species is not None) & (dst_species is not None)) and (
+        src_species != dst_species
+    ):
+        dict_map = load_homolog_mapping(src_species, dst_species)  # type: ignore
+    else:
+        dict_map = None  # type: ignore
+
+    # Load gene set file
+    dict_gs = {}
+    df_gs = pd.read_csv(gs_path, sep="\t")
+    for i, (trait, gs) in df_gs.iterrows():
+        gs_info = [g.split(":") for g in gs.split(",")]
+        if np.all([len(g) == 1 for g in gs_info]):
+            # if all genes are weighted uniformly
+            dict_weights = {g[0]: 1.0 for g in gs_info}
+        elif np.all([len(g) == 2 for g in gs_info]):
+            # if all genes are weighted by their weights
+            dict_weights = {g[0]: float(g[1]) for g in gs_info}
+        else:
+            raise ValueError(f"gene set {trait} contains genes with invalid format")
+
+        # Convert species if needed
+        # convert gene list to homologs, if gene can not be mapped, remove it
+        # in both gene list and gene weight
+        if dict_map is not None:
+            dict_weights = {
+                dict_map[g]: w for g, w in dict_weights.items() if g in dict_map
+            }
+
+        # Intersect with other gene sets
+        if to_intersect is not None:
+            to_intersect = set(to_intersect)
+            dict_weights = {g: w for g, w in dict_weights.items() if g in to_intersect}
+
+        gene_list = list(dict_weights.keys())
+        dict_gs[trait] = (
+            gene_list,
+            [dict_weights[g] for g in gene_list],
+        )
+
+    return dict_gs

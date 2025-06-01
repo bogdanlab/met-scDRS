@@ -158,9 +158,51 @@ def compute_score(
         "--h5ad-file loaded: n_cell=%d, n_gene=%d (sys_time=%0.1fs)"
         % (adata.shape[0], adata.shape[1], time.time() - sys_start_time)
     )
+    print("First 3 cells: %s" % (str(list(adata.obs_names[:3]))))
+    print("First 5 genes: %s" % (str(list(adata.var_names[:5]))))
     
+    # load in covariate file:
+    # Load .cov file
+    if COV_FILE is not None:
+        df_cov = pd.read_csv(COV_FILE, sep="\t", index_col=0)
+        df_cov.index = [str(x) for x in df_cov.index]
+        print(
+            "--cov-file loaded: covariates=%s (sys_time=%0.1fs)"
+            % (str(list(df_cov.columns)), time.time() - sys_start_time)
+        )
+        print(
+            "n_cell=%d (%d in .h5ad)"
+            % (df_cov.shape[0], len(set(df_cov.index) & set(adata.obs_names)))
+        )
+        print("First 3 cells: %s" % (str(list(df_cov.index[:3]))))
+        for col in df_cov.columns:
+            print(
+                "First 5 values for '%s': %s" % (col, str(list(df_cov[col].values[:5])))
+            )
+    else:
+        df_cov = None
+
+    # LOAD gs file:
+    dict_gs = met_scdrs.util.load_gs(
+        GS_FILE,
+        src_species=GS_SPECIES,
+        dst_species=H5AD_SPECIES,
+        to_intersect=adata.var_names,
+    )
+    print(
+        "--gs-file loaded: n_trait=%d (sys_time=%0.1fs)"
+        % (len(dict_gs), time.time() - sys_start_time)
+    )
+    print("Print info for first 3 traits:")
+    for gs in list(dict_gs)[:3]:
+        print(
+            "First 3 elements for '%s': %s, %s"
+            % (gs, str(dict_gs[gs][0][:3]), str(dict_gs[gs][1][:3]))
+        )
+    print("")
+
     # print a message on total time spent
-    print(f'Time elapsed: {time.time() - sys_start_time:.3f} seconds')
+    print(f'loading completed, time elapsed: {time.time() - sys_start_time:.3f} seconds')
 
 
 
