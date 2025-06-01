@@ -29,6 +29,9 @@ def compute_score(
     gs_file: str,
     gs_species: str,
     out_folder: str,
+    preprocess: bool = True,
+    preprocess_method: str = 'inverse',
+    variance_clip: int = 5,
     cov_file: str = None,
     ctrl_match_opt: str = 'mean_var',
     weight_opt: str = 'inv_std',
@@ -44,6 +47,13 @@ def compute_score(
     h5ad_file : str
         Path to the single-cell `.h5ad` file. The `.X` attribute should contain a cell-by-gene 
         methylation matrix.
+    preprocess : bool
+        if the fraction matrix in `.h5ad` be preprocessed
+    preprocess_method : str
+        methodology to preprocess the single cell methylation matrix, supported methods:
+        "inverse" : inverse the fraction into 1 - X
+    variance_clip : int
+        only genes with greater than specified percentile will be retained, default to 5th percentile
     h5ad_species : str
         Species of the cells in the `h5ad_file`. Supports automatic gene name translation 
         between human and mouse. As long as the species matches between `h5ad_file` and `gs_file`, 
@@ -73,6 +83,9 @@ def compute_score(
     --------
     met-scdrs compute_score \
         --h5ad_file <h5ad_file> \
+        --preprocess True \
+        --preprocess_method inverse \
+        --variance_clip 5 \
         --h5ad_species human \
         --gs_file <gs_file> \
         --gs_species human \
@@ -91,6 +104,9 @@ def compute_score(
     ######                                   INPUT PARSEING                              ######
     ###########################################################################################
     H5AD_FILE = h5ad_file
+    PREPROCESS = preprocess
+    PREPROCESS_METHOD = preprocess_method
+    VARIANCE_CLIP = variance_clip
     H5AD_SPECIES = h5ad_species
     COV_FILE = cov_file
     GS_FILE = gs_file
@@ -113,6 +129,9 @@ def compute_score(
     header = get_cli_head()
     header += "Call: met-scdrs compute-score \\\n"
     header += "--h5ad_file %s \\\n" % H5AD_FILE
+    header += "--preprocess %s \\\n" % PREPROCESS
+    header += "--preprocess_method %s \\\n" % PREPROCESS_METHOD
+    header += "--variance_clip %s \\\n" % VARIANCE_CLIP
     header += "--h5ad_species %s \\\n" % H5AD_SPECIES
     header += "--cov_file %s \\\n" % COV_FILE
     header += "--gs_file %s \\\n" % GS_FILE
@@ -204,8 +223,20 @@ def compute_score(
     # print a message on total time spent
     print(f'loading completed, time elapsed: {time.time() - sys_start_time:.3f} seconds')
 
+    ###########################################################################################
+    ######                                    PREPROCESS                                 ######
+    ###########################################################################################
+    if PREPROCESS:
+        met_scdrs.preprocess(
+        h5ad_obj = adata,
+        method = PREPROCESS_METHOD,
+        variance_clip = VARIANCE_CLIP
+        )
+    
 
-
+        
+    
+    
 
 
 

@@ -14,6 +14,7 @@ from typing import List, Dict
 from anndata import read_h5ad
 import fnmatch
 import matplotlib.patches as patches
+import psutil
 
 def convert_species_name(species):
     if species in ["Mouse", "mouse", "Mus_musculus", "mus_musculus", "mmusculus"]:
@@ -28,6 +29,9 @@ def check_folder(folder_path):
         return True
     else:
         return False
+
+def get_memory():
+    return psutil.Process(os.getpid()).memory_info().rss / 1e6
 
 def load_h5ad(h5ad_file : str):
     """
