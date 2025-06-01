@@ -109,10 +109,60 @@ def compute_score(
         print(f'h5ad species name converted to {H5AD_SPECIES}')
         print(f'gs_species name converted to {GS_SPECIES}')
 
+    # print out the header:
+    header = get_cli_head()
+    header += "Call: met-scdrs compute-score \\\n"
+    header += "--h5ad_file %s \\\n" % H5AD_FILE
+    header += "--h5ad_species %s \\\n" % H5AD_SPECIES
+    header += "--cov_file %s \\\n" % COV_FILE
+    header += "--gs_file %s \\\n" % GS_FILE
+    header += "--gs_species %s \\\n" % GS_SPECIES
+    header += "--ctrl_match_opt %s \\\n" % CTRL_MATCH_OPT
+    header += "--weight_opt %s \\\n" % WEIGHT_OPT
+    header += "--n_ctrl %d \\\n" % N_CTRL
+    header += "--flag_return_ctrl_raw_score %s \\\n" % FLAG_RETURN_CTRL_RAW_SCORE
+    header += "--flag_return_ctrl_norm_score %s \\\n" % FLAG_RETURN_CTRL_NORM_SCORE
+    header += "--out_folder %s\n" % OUT_FOLDER
+    print(header)
+
+    # check options:
+    print('\n\n CHECKING INPUT \n\n')
+    if H5AD_SPECIES != GS_SPECIES:
+        if H5AD_SPECIES not in ["mmusculus", "hsapiens"]:
+            raise ValueError(
+                "--h5ad-species needs to be one of [mmusculus, hsapiens] "
+                "unless --h5ad-species==--gs-species"
+            )
+        if GS_SPECIES not in ["mmusculus", "hsapiens"]:
+            raise ValueError(
+                "--gs-species needs to be one of [mmusculus, hsapiens] "
+                "unless --h5ad-species==--gs-species"
+            )
+    # matching control genes should be mean_var:
+    if CTRL_MATCH_OPT not in ["mean_var"]:
+        raise ValueError("--ctrl_match_opt mean_var should be mean_var")
+    if WEIGHT_OPT not in ['inv_std']:
+        raise ValueError("--weight_opt should be inv_std")
+    # also check folder:
+    if not met_scdrs.util.check_folder(OUT_FOLDER):
+        raise ValueError("--out_folder does not exist")
+
     ###########################################################################################
-    ######                                    Section Title                              ######
+    ######                                    DATA LOADING                               ######
     ###########################################################################################
+    print('\n\n LOADING DATA \n\n')
+
+    # load h5ad data:
+    adata = met_scdrs.util.load_h5ad(H5AD_FILE)
+    print(
+        "--h5ad-file loaded: n_cell=%d, n_gene=%d (sys_time=%0.1fs)"
+        % (adata.shape[0], adata.shape[1], time.time() - sys_start_time)
+    )
     
+    # print a message on total time spent
+    print(f'Time elapsed: {time.time() - sys_start_time:.3f} seconds')
+
+
 
 
 

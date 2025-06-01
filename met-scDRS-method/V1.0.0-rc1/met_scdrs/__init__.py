@@ -1,5 +1,5 @@
-from . import core, util, version
-from .core import score_cells
+from . import method, util, version
+from .method import score_cells
 from .version import __version__
 
-__all__ = ["core", "util", 'preprocess', 'score_cells']
+__all__ = ["method", "util", 'preprocess', 'score_cells']
