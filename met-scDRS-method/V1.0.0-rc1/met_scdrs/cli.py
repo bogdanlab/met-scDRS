@@ -233,13 +233,71 @@ def compute_score(
             variance_clip = VARIANCE_CLIP
         )
     
+    # preprocess with covariates
     met_scdrs.preprocess(
         adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False
     )
+    print("")
     
     ###########################################################################################
     ######                                    Compute score                              ######
     ###########################################################################################
+    # Compute score
+    print("Computing scDRS score:")
+    for trait in dict_gs:
+        gene_list, gene_weights = dict_gs[trait]
+        if len(gene_list) < 10:
+            print(
+                "trait=%s: skipped due to small size (n_gene=%d, sys_time=%0.1fs)"
+                % (trait, len(gene_list), time.time() - sys_start_time)
+            )
+            continue
+        
+        # compute the score (both disease and control genes)
+        df_res = met_scdrs.score_cell(
+            adata,
+            gene_list,
+            gene_weight=gene_weights,
+            ctrl_match_key=CTRL_MATCH_OPT,
+            n_ctrl=N_CTRL,
+            weight_opt=WEIGHT_OPT,
+            return_ctrl_raw_score=FLAG_RETURN_CTRL_RAW_SCORE,
+            return_ctrl_norm_score=FLAG_RETURN_CTRL_NORM_SCORE,
+            verbose=True,
+        )
+        
+        df_res.iloc[:, 0:6].to_csv(
+            os.path.join(OUT_FOLDER, "%s.score.gz" % trait),
+            sep="\t",
+            index=True,
+            compression="gzip",
+        )
+        
+        if FLAG_RETURN_CTRL_RAW_SCORE | FLAG_RETURN_CTRL_NORM_SCORE:
+            df_res.to_csv(
+                os.path.join(OUT_FOLDER, "%s.full_score.gz" % trait),
+                sep="\t",
+                index=True,
+                compression="gzip",
+            )
+        
+        # compute the fdr correction:
+        v_fdr = multipletests(df_res["pval"].values, method="fdr_bh")[1]
+        n_rej_01 = (v_fdr < 0.1).sum()
+        n_rej_02 = (v_fdr < 0.2).sum()
+        print(
+            "Trait=%s, n_gene=%d: %d/%d FDR<0.1 cells, %d/%d FDR<0.2 cells (sys_time=%0.1fs)"
+            % (
+                trait,
+                len(gene_list),
+                n_rej_01,
+                df_res.shape[0],
+                n_rej_02,
+                df_res.shape[0],
+                time.time() - sys_start_time,
+            )
+        )
+    return
 
 
 def quote_from_cyberpunk2077():

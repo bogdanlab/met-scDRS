@@ -367,11 +367,11 @@ def compute_stats(
     cell_weight : array_like, default=None
         Cell weights of length `adata.shape[0]` for cells in `adata`,
         used for computing weighted gene-level statistics.
-    n_mean_bin : int, default=20
+    n_mean_bin : int, default=10
         Number of mean-expression bins for matching control genes.
-    n_var_bin : int, default=20
+    n_var_bin : int, default=10
         Number of expression-variance bins for matching control genes.
-    n_chunk : int, default=20
+    n_chunk : int, default=10
         Number of chunks to split the data into when computing mean and variance
         using _get_mean_var_implicit_cov_corr.
 
@@ -470,7 +470,12 @@ def compute_stats(
             df_gene.loc[ind_select, "var"], n_var_bin, labels=False, duplicates="drop"
         )
         df_gene.loc[ind_select, "mean_var"] = ["%d.%d" % (bin_, x) for x in v_var_bin]
-
+    
+    ##########################################################
+    ############# ADD GENE LENGTH BIN LATER HERE ############
+    ##########################################################
+    
+    
     # Cell-level statistics
     if not implicit_cov_corr:
         # Normal mode
@@ -482,7 +487,6 @@ def compute_stats(
         )
 
     return df_gene, df_cell
-
 
 ##############################################################################
 ######################## Preprocessing Subroutines ###########################
@@ -531,7 +535,6 @@ def reg_out(mat_Y, mat_X):
         return mat_Y_resid.astype(np.float32)
     else:
         return mat_Y_resid
-
 
 def _get_mean_var(sparse_X, axis=0, weights=None):
     """
