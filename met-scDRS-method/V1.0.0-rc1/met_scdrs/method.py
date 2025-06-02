@@ -2,6 +2,7 @@ from scipy import sparse
 import numpy as np
 import time
 from met_scdrs.util import get_memory
+from anndata import AnnData
 
 def preprocess(
     h5ad_obj,
@@ -32,11 +33,14 @@ def preprocess(
     # obtain the memory usage:
     print(f"Initiating preprocess, memory usage: {get_memory():.2f} MB")
     
+    ###########################################################################################
+    ######                                  helper function                              ######
+    ###########################################################################################
     # define method (inverse): 
     def inverse_method(h5ad_obj):
         if sparse.issparse(h5ad_obj.X):
             print('h5ad object is recognized as sparse object')
-            h5ad_obj.X.data = 1 - h5ad_obj.X.data
+            h5ad_obj.X = 1 - h5ad_obj.X.toarray()
             return h5ad_obj
         
         elif isinstance(h5ad_obj.X, np.ndarray):
@@ -49,14 +53,48 @@ def preprocess(
             print('highly recommended to create h5ad with scipy sparse object, attemping 1 - h5ad_obj.X')
             h5ad_obj.X = 1 - h5ad_obj.X
             return h5ad_obj
+    
+    def compute_variance(h5ad_obj):
+        if sparse.issparse(h5ad_obj.X):
+            variances_ = np.var(h5ad_obj.X.toarray(), axis = 0)
+        else:
+            variances_ = np.var(h5ad_obj.X, axis = 0)
+        return variances_
+    
+    ###########################################################################################
+    ######                                    preprocess .X                              ######
+    ###########################################################################################
+    # preprocess the .X data:
     methods = {'inverse' : inverse_method}
     preprocessed_data = methods[method](h5ad_obj)
+    
+    ###########################################################################################
+    ######                                    variance clip                              ######
+    ###########################################################################################
+    # variance masking and assertion:
+    print('Filtering gene based on variance')
+    gene_variances = compute_variance(preprocessed_data)
+    var_threshold = np.percentile(gene_variances, variance_clip)
+    print(f"Variance clip at {variance_clip} percentile: {var_threshold:.5f}")
+    assert var_threshold > 0, "all gene variance is not > 0, please increase the variance clipping percentile"
+    
+    # filter off genes with small variance:
+    high_var_mask = gene_variances >= var_threshold
+    print(f"Retaining {np.sum(high_var_mask)} / {len(gene_variances)} genes")
+    preprocessed_data._inplace_subset_var(high_var_mask)
+    
+    # assertion variance filter and gene with high variance is retained:
+    preprocessed_var = compute_variance(preprocessed_data)
+    assert (preprocessed_var >= var_threshold).all, "variance is not clipped properly, exitting"
     
     # method to usage 
     # print our usage information:
     print(f'Preprocess completed, elapsed time: {(time.time() - initial_time):.3f} seconds')
     print(f"Finished preprocess, memory usage: {get_memory():.2f} MB")
     return preprocessed_data
+    
+
+
 
 
 def score_cells(input_path):

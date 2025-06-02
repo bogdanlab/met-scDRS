@@ -1,6 +1,7 @@
 from pathlib import Path
 import numpy as np
 import scipy as sp
+import scipy.sparse
 import pandas as pd
 import numbers
 import seaborn as sns
@@ -51,6 +52,22 @@ def load_h5ad(h5ad_file : str):
             "h5ad expression matrix should not contain NaN. Please impute them beforehand."
         )
     return adata
+
+def write_adata_to_csv(h5ad_obj, csv_out):
+    # Convert adata.X to a dense matrix if it's sparse
+    if scipy.sparse.issparse(h5ad_obj.X):
+        matrix = h5ad_obj.X.toarray()
+    else:
+        matrix = h5ad_obj.X
+
+    # Create DataFrame with proper labels
+    df = pd.DataFrame(
+        matrix,
+        index=h5ad_obj.obs_names,   # cell IDs as row index
+        columns=h5ad_obj.var_names  # gene names as column names
+    )
+    df.to_csv(csv_out)
+    return df
 
 def load_homolog_mapping(src_species: str, dst_species: str) -> dict:
     """Load gene homologs between mouse and human.

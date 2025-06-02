@@ -10,8 +10,11 @@ from typing import Dict, List
 import scanpy as sc
 import os
 import time
+from datetime import date
 
 ### HEADER ########################################################################################
+today = date.today()
+
 def get_cli_head():
     MASTHEAD = "******************************************************************************\n"
     MASTHEAD += "* methylation single-cell disease relevance score (met-scDRS)\n"
@@ -22,7 +25,7 @@ def get_cli_head():
     MASTHEAD += "* MIT License\n"
     MASTHEAD += "******************************************************************************\n"
     return MASTHEAD
-
+    
 def compute_score(
     h5ad_file: str,
     h5ad_species: str,
@@ -99,7 +102,7 @@ def compute_score(
     """
     # record system start time:
     sys_start_time = time.time()
-
+    
     ###########################################################################################
     ######                                   INPUT PARSEING                              ######
     ###########################################################################################
@@ -117,14 +120,14 @@ def compute_score(
     N_CTRL = n_ctrl
     FLAG_RETURN_CTRL_RAW_SCORE = flag_return_ctrl_raw_score
     FLAG_RETURN_CTRL_NORM_SCORE = flag_return_ctrl_norm_score
-
+    
     # if the species name doesn't match, convert the species name:
     if H5AD_SPECIES != GS_SPECIES:
         H5AD_SPECIES = met_scdrs.util.convert_species_name(H5AD_SPECIES)
         GS_SPECIES = met_scdrs.util.convert_species_name(GS_SPECIES)
         print(f'h5ad species name converted to {H5AD_SPECIES}')
         print(f'gs_species name converted to {GS_SPECIES}')
-
+    
     # print out the header:
     header = get_cli_head()
     header += "Call: met-scdrs compute-score \\\n"
@@ -143,7 +146,7 @@ def compute_score(
     header += "--flag_return_ctrl_norm_score %s \\\n" % FLAG_RETURN_CTRL_NORM_SCORE
     header += "--out_folder %s\n" % OUT_FOLDER
     print(header)
-
+    
     # check options:
     print('\n\n CHECKING INPUT \n\n')
     if H5AD_SPECIES != GS_SPECIES:
@@ -165,12 +168,12 @@ def compute_score(
     # also check folder:
     if not met_scdrs.util.check_folder(OUT_FOLDER):
         raise ValueError("--out_folder does not exist")
-
+    
     ###########################################################################################
     ######                                    DATA LOADING                               ######
     ###########################################################################################
     print('\n\n LOADING DATA \n\n')
-
+    
     # load h5ad data:
     adata = met_scdrs.util.load_h5ad(H5AD_FILE)
     print(
@@ -200,7 +203,7 @@ def compute_score(
             )
     else:
         df_cov = None
-
+    
     # LOAD gs file:
     dict_gs = met_scdrs.util.load_gs(
         GS_FILE,
@@ -219,20 +222,24 @@ def compute_score(
             % (gs, str(dict_gs[gs][0][:3]), str(dict_gs[gs][1][:3]))
         )
     print("")
-
+    
     # print a message on total time spent
     print(f'loading completed, time elapsed: {time.time() - sys_start_time:.3f} seconds')
-
+    
     ###########################################################################################
     ######                                    PREPROCESS                                 ######
     ###########################################################################################
     if PREPROCESS:
-        met_scdrs.preprocess(
-        h5ad_obj = adata,
-        method = PREPROCESS_METHOD,
-        variance_clip = VARIANCE_CLIP
+        adata = met_scdrs.preprocess(
+            h5ad_obj = adata,
+            method = PREPROCESS_METHOD,
+            variance_clip = VARIANCE_CLIP
         )
     
+    ###########################################################################################
+    ######                                    Test delete later                          ######
+    ###########################################################################################
+    met_scdrs.util.write_adata_to_csv(adata, csv_out = f'/u/scratch/l/lixinzhe/revision_scratch/v1.0.0-rc1/{today}_inversed_clipped_test.csv')
 
         
     
