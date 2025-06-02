@@ -233,6 +233,10 @@ def compute_score(
             variance_clip = VARIANCE_CLIP
         )
     
+    met_scdrs.preprocess(
+        adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False
+    )
+    
     ###########################################################################################
     ######                                    Compute score                              ######
     ###########################################################################################

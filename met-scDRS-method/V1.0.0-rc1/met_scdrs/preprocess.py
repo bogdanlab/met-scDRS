@@ -8,6 +8,7 @@ import warnings
 import time
 from met_scdrs.util import get_memory
 from anndata import AnnData
+import gc
 
 def normalize(
     h5ad_obj,
@@ -72,6 +73,7 @@ def normalize(
     # preprocess the .X data:
     methods = {'inverse' : inverse_method}
     preprocessed_data = methods[method](h5ad_obj)
+    gc.collect()
     
     ###########################################################################################
     ######                                    variance clip                              ######
@@ -91,14 +93,13 @@ def normalize(
     # assertion variance filter and gene with high variance is retained:
     preprocessed_var = compute_variance(preprocessed_data)
     assert (preprocessed_var >= var_threshold).all, "variance is not clipped properly, exitting"
+    gc.collect()
     
     # method to usage 
     # print our usage information:
-    print(f'Preprocess completed, elapsed time: {(time.time() - initial_time):.3f} seconds')
-    print(f"Finished preprocess, memory usage: {get_memory():.2f} MB")
+    print(f'Normalization completed, elapsed time: {(time.time() - initial_time):.3f} seconds')
+    print(f"Finished normalization, memory usage: {get_memory():.2f} MB")
     return preprocessed_data
-
-
 
 def category2dummy(
     df: pd.DataFrame, cols: List[str] = None, verbose: bool = False
@@ -152,9 +153,8 @@ def category2dummy(
         )
     return df
 
-
 def preprocess(
-    data, cov=None, adj_prop=None, n_mean_bin=20, n_var_bin=20, n_chunk=None, copy=False
+    data, cov=None, n_mean_bin=20, n_var_bin=20, n_chunk=None, copy=False
 ):
     """
     Preprocess single-cell data for scDRS analysis.
@@ -180,13 +180,6 @@ def preprocess(
 
         CORRECTED_X = data.X + COV_MAT * COV_BETA + COV_GENE_MEAN
 
-    The `adj_prop` option is used for adjusting for cell group proportions,
-    where each cell is inversely weighted proportional to its corresponding
-    cell group size for computing expression mean and variance for genes.
-    For stability, the smallest group size is set to be at least 1% of the
-    largest group size.
-
-
     Parameters
     ----------
     data : anndata.AnnData
@@ -195,9 +188,6 @@ def preprocess(
     cov : pandas.DataFrame, default=None
         Covariates of shape (n_cell, n_cov). Should contain
         a constant term and have values for at least 75% cells.
-    adj_prop : str, default=None
-        Cell group annotation (e.g., cell type) used for adjusting for cell group proportions.
-        `adj_prop` should be present in `data.obs.columns`.
     n_mean_bin : int, default=20
         Number of mean-expression bins for matching control genes.
     n_var_bin : int, default=20
@@ -254,18 +244,18 @@ def preprocess(
 
 
     """
-
+    # print the memory usage:
+    print(f"Starting preprocessing, memory usage: {get_memory():.2f} MB")
+    
     adata = data.copy() if copy else data
     n_cell, n_gene = adata.shape
 
     # Parameters and flags
     flag_sparse = sparse.issparse(adata.X)
     flag_cov = cov is not None
-    flag_adj_prop = adj_prop is not None
     adata.uns["SCDRS_PARAM"] = {
         "FLAG_SPARSE": flag_sparse,
         "FLAG_COV": flag_cov,
-        "FLAG_ADJ_PROP": flag_adj_prop,
     }
 
     # Update adata.X
@@ -331,25 +321,8 @@ def preprocess(
         implicit_cov_corr = False
         if n_chunk is None:
             n_chunk = 20
-
-    if flag_adj_prop:
-        err_msg = "'adj_prop'=%s not in 'adata.obs.columns'" % adj_prop
-        assert adj_prop in adata.obs, err_msg
-        err_msg = (
-            "On average <10 cells per group, maybe `%s` is not categorical?" % adj_prop
-        )
-        assert adata.obs[adj_prop].unique().shape[0] < 0.1 * n_cell, err_msg
-
-        temp_df = adata.obs[[adj_prop]].copy()
-        temp_df["cell"] = 1
-        temp_df = temp_df.groupby(adj_prop).agg({"cell": len})
-        temp_df["cell"].clip(lower=int(0.01 * temp_df["cell"].max()), inplace=True)
-        temp_dic = {x: n_cell / temp_df.loc[x, "cell"] for x in temp_df.index}
-
-        cell_weight = np.array([temp_dic[x] for x in adata.obs[adj_prop]])
-        cell_weight = cell_weight / cell_weight.mean()
-    else:
-        cell_weight = None
+    
+    cell_weight = None
 
     df_gene, df_cell = compute_stats(
         adata,
@@ -362,9 +335,8 @@ def preprocess(
 
     adata.uns["SCDRS_PARAM"]["GENE_STATS"] = df_gene
     adata.uns["SCDRS_PARAM"]["CELL_STATS"] = df_cell
-
+    print(f"Finished preprocessing, memory usage: {get_memory():.2f} MB")
     return adata if copy else None
-
 
 def compute_stats(
     adata,
@@ -553,8 +525,12 @@ def reg_out(mat_Y, mat_X):
 
     if mat_Y_resid.shape[1] == 1:
         mat_Y_resid = mat_Y_resid.reshape([-1])
-
-    return mat_Y_resid
+    
+    # if the original float is 32, keep the float 32 residuals as well to prevent up-scaling
+    if mat_Y.dtype == 'float32':
+        return mat_Y_resid.astype(np.float32)
+    else:
+        return mat_Y_resid
 
 
 def _get_mean_var(sparse_X, axis=0, weights=None):
