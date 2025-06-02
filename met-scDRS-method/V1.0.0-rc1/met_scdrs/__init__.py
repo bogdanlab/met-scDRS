@@ -1,6 +1,6 @@
 from . import method, util, version
-from .method import score_cells
-from .method import preprocess
+from .method import score_cell
+from .preprocess import normalize, preprocess
 from .version import __version__
 
-__all__ = ["method", "util", 'preprocess', 'score_cells']
+__all__ = ["method", "util", 'normalize', 'preprocess', 'score_cells']

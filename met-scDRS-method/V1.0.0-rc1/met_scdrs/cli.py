@@ -10,11 +10,8 @@ from typing import Dict, List
 import scanpy as sc
 import os
 import time
-from datetime import date
 
 ### HEADER ########################################################################################
-today = date.today()
-
 def get_cli_head():
     MASTHEAD = "******************************************************************************\n"
     MASTHEAD += "* methylation single-cell disease relevance score (met-scDRS)\n"
@@ -230,23 +227,15 @@ def compute_score(
     ######                                    PREPROCESS                                 ######
     ###########################################################################################
     if PREPROCESS:
-        adata = met_scdrs.preprocess(
+        adata = met_scdrs.normalize(
             h5ad_obj = adata,
             method = PREPROCESS_METHOD,
             variance_clip = VARIANCE_CLIP
         )
     
     ###########################################################################################
-    ######                                    Test delete later                          ######
+    ######                                    Compute score                              ######
     ###########################################################################################
-    met_scdrs.util.write_adata_to_csv(adata, csv_out = f'/u/scratch/l/lixinzhe/revision_scratch/v1.0.0-rc1/{today}_inversed_clipped_test.csv')
-
-        
-    
-    
-
-
-
 
 
 def quote_from_cyberpunk2077():
