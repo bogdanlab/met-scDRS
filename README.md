@@ -37,6 +37,45 @@ conda activate metscdrs-env
 pip install -e .
 ```
 
+### USAGE
+```bash
+# Compute met-scdrs:
+met-scdrs compute_score \
+    --h5ad_file <h5ad_file> \
+    --preprocess True \
+    --preprocess_method inverse \
+    --variance_clip 5 \
+    --h5ad_species human \
+    --gs_file <gs_file> \
+    --gs_species human \
+    --out_folder <out_folder> \
+    --cov_file <cov_file> \
+    --ctrl_match_opt mean_var \
+    --weight_opt inv_std \
+    --n_ctrl 1000 \
+    --flag_return_ctrl_raw_score False \
+    --flag_return_ctrl_norm_score True \
+    --verbose True
+
+# for clarity, if no covariates for regression:
+met-scdrs compute_score \
+    --h5ad_file <h5ad_file> \
+    --preprocess True \
+    --preprocess_method inverse \
+    --variance_clip 5 \
+    --h5ad_species human \
+    --gs_file <gs_file> \
+    --gs_species human \
+    --out_folder <out_folder> \
+    --ctrl_match_opt mean_var \
+    --weight_opt inv_std \
+    --n_ctrl 1000 \
+    --flag_return_ctrl_raw_score False \
+    --flag_return_ctrl_norm_score True \
+    --verbose True
+
+```
+
 ## License
 
 This project is licensed under the MIT License. See below for details.
