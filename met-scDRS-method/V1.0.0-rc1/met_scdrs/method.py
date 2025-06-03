@@ -63,7 +63,6 @@ def score_cell(
         - 'uniform': average over the genes in the gene_list.
         - 'vs': weighted average with weights equal to 1/sqrt(technical_variance_of_logct).
         - 'inv_std': weighted average with weights equal to 1/std.
-        - 'od': overdispersion score.
 
     copy : bool, default=False
         If to make copy of the AnnData object to avoid writing on the orignal data.
@@ -121,7 +120,7 @@ def score_cell(
 
     # Check if weight_opt is legal
     assert weight_opt in {"vs", "inv_std"}, (
-        "weight_opt=%s is not one of {'vs', 'inv_std'}" % weight_opt
+        "weight_opt=%s is not one of {'uniform', 'vs', 'inv_std'}" % weight_opt
     )
 
     if verbose:
@@ -352,14 +351,9 @@ def _compute_raw_score(adata, gene_list, gene_weight, weight_opt):
     gene_list = list(gene_list)
     gene_weight = list(gene_weight)
 
-    assert weight_opt in {"uniform", "vs", "inv_std", "od"}, (
-        "weight_opt=%s is not one of {'uniform', 'vs', 'inv_std', 'od}'" % weight_opt
+    assert weight_opt in {"uniform", "vs", "inv_std"}, (
+        "weight_opt=%s is not one of {'uniform', 'vs', 'inv_std'}" % weight_opt
     )
-
-    # Compute overdispersion score
-    # (used only for benchmarking, do not support implicit covariate correction mode)
-    if weight_opt == "od":
-        return _compute_overdispersion_score(adata, gene_list, gene_weight)
 
     # Compute other weighted average scores
     assert (
@@ -403,82 +397,6 @@ def _compute_raw_score(adata, gene_list, gene_weight, weight_opt):
         v_raw_score = adata[:, gene_list].X.dot(v_score_weight).reshape([-1])
 
     return v_raw_score, v_score_weight
-
-
-def _compute_overdispersion_score(adata, gene_list, gene_weight):
-    """Compute overdispersion score
-
-        Raw weight: w_g_raw = gene_weight / \sigma_{tech,g}^2
-
-        Normalized weight: w_g = w_g_raw / \sum_g w_g_raw
-
-        Overdispersion score: s_c = \sum_g w_g * [(X_cg - \mu_g)^2 - \sigma_{tech,g}^2]
-
-    Args
-    ----
-    adata : anndata.AnnData
-        Single-cell data of shape (n_cell, n_gene). Assumed
-        to be size-factor-normalized and log1p-transformed.
-    gene_list : list
-        Disease gene list of length n_disease_gene.
-    gene_weight : list
-        Gene weights of length n_disease_gene for genes in the gene_list.
-
-    Returns
-    -------
-    v_raw_score : np.ndarray
-        Raw score of shape (n_cell,).
-    v_score_weight : np.ndarray
-        Gene weights of shape (n_disease_gene,).
-    """
-
-    gene_list = list(gene_list)
-    gene_weight = list(gene_weight)
-
-    assert (
-        "SCDRS_PARAM" in adata.uns
-    ), "adata.uns['SCDRS_PARAM'] not found, run `scdrs.pp.preprocess` first"
-
-    # Mode check
-    flag_sparse = adata.uns["SCDRS_PARAM"]["FLAG_SPARSE"]
-    flag_cov = adata.uns["SCDRS_PARAM"]["FLAG_COV"]
-    if flag_sparse and flag_cov:
-        cell_list = list(adata.obs_names)
-        cov_list = list(adata.uns["SCDRS_PARAM"]["COV_MAT"])
-        mat_X = (
-            adata[:, gene_list].X.toarray()
-            + adata.uns["SCDRS_PARAM"]["COV_MAT"]
-            .loc[cell_list, cov_list]
-            .values.dot(
-                adata.uns["SCDRS_PARAM"]["COV_BETA"].loc[gene_list, cov_list].values.T
-            )
-            + adata.uns["SCDRS_PARAM"]["COV_GENE_MEAN"].loc[gene_list].values
-        )
-    else:
-        mat_X = adata[:, gene_list].X
-
-    v_mean = adata.uns["SCDRS_PARAM"]["GENE_STATS"].loc[gene_list, "mean"].values
-    v_var_tech = (
-        adata.uns["SCDRS_PARAM"]["GENE_STATS"].loc[gene_list, "var_tech"].values
-    )
-
-    v_w = 1 / (v_var_tech + 1e-2)
-    if gene_weight is not None:
-        v_w = v_w * np.array(gene_weight)
-    v_w = v_w / v_w.sum()
-
-    # Compute overdispersion score
-    if sp.sparse.issparse(mat_X):
-        v_raw_score = mat_X.power(2).dot(v_w).reshape([-1])  # Quadratic term
-    else:
-        v_raw_score = (mat_X ** 2).dot(v_w).reshape([-1])  # Quadratic term
-    v_raw_score = v_raw_score - mat_X.dot(2 * v_w * v_mean).reshape([-1])  # Linear term
-    v_raw_score = (
-        v_raw_score + (v_w * (v_mean ** 2 - v_var_tech)).sum()
-    )  # Constant term
-
-    return v_raw_score, np.ones(len(gene_list))
-
 
 def _correct_background(
     v_raw_score, mat_ctrl_raw_score, v_var_ratio_c2t, save_intermediate=None

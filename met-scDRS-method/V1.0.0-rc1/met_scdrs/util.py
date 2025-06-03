@@ -16,6 +16,8 @@ from anndata import read_h5ad
 import fnmatch
 import matplotlib.patches as patches
 import psutil
+import threading
+import time
 
 def convert_species_name(species):
     if species in ["Mouse", "mouse", "Mus_musculus", "mus_musculus", "mmusculus"]:
@@ -192,3 +194,26 @@ def load_gs(
         )
 
     return dict_gs
+
+class MemoryTracker:
+    # From chatGPT
+    def __init__(self, interval = 0.01):
+        self.interval = interval
+        self._peak = 0
+        self._stop = False
+    
+    def _track(self):
+        process = psutil.Process(os.getpid())
+        while not self._stop:
+            current = process.memory_info().rss / 1e6 / 1e3
+            self._peak = max(self._peak, current)
+            time.sleep(self.interval)
+    def start(self):
+        self._stop = False
+        self._peak = 0
+        self._thread = threading.Thread(target = self._track)
+        self._thread.start()
+    def stop(self):
+        self._stop = True
+        self._thread.join()
+        return self._peak

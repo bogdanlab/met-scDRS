@@ -37,7 +37,8 @@ def compute_score(
     weight_opt: str = 'inv_std',
     n_ctrl: int = 1000,
     flag_return_ctrl_raw_score: bool = False,
-    flag_return_ctrl_norm_score: bool = True
+    flag_return_ctrl_norm_score: bool = True,
+    verbose: bool = True
 ):
     """
     Compute met-scDRS scores for single-cell methylation data.
@@ -78,6 +79,8 @@ def compute_score(
         If True, the full set of raw control scores will be output. Default is False.
     flag_return_ctrl_norm_score : bool, optional
         If True, normalized control scores will be output. Default is True.
+    verbose : bool, optional
+        If True, chatty about processing
 
     Examples
     --------
@@ -95,7 +98,8 @@ def compute_score(
         --weight_opt inv_std \
         --n_ctrl 1000 \
         --flag_return_ctrl_raw_score False \
-        --flag_return_ctrl_norm_score True
+        --flag_return_ctrl_norm_score True \
+        --verbose True
     """
     # record system start time:
     sys_start_time = time.time()
@@ -117,6 +121,7 @@ def compute_score(
     N_CTRL = n_ctrl
     FLAG_RETURN_CTRL_RAW_SCORE = flag_return_ctrl_raw_score
     FLAG_RETURN_CTRL_NORM_SCORE = flag_return_ctrl_norm_score
+    VERBOSE = verbose
     
     # if the species name doesn't match, convert the species name:
     if H5AD_SPECIES != GS_SPECIES:
@@ -142,6 +147,7 @@ def compute_score(
     header += "--flag_return_ctrl_raw_score %s \\\n" % FLAG_RETURN_CTRL_RAW_SCORE
     header += "--flag_return_ctrl_norm_score %s \\\n" % FLAG_RETURN_CTRL_NORM_SCORE
     header += "--out_folder %s\n" % OUT_FOLDER
+    header += "--verbose %s \n" % VERBOSE
     print(header)
     
     # check options:
@@ -169,7 +175,7 @@ def compute_score(
     ###########################################################################################
     ######                                    DATA LOADING                               ######
     ###########################################################################################
-    print('\n\n LOADING DATA \n\n')
+    print('LOADING DATA')
     
     # load h5ad data:
     adata = met_scdrs.util.load_h5ad(H5AD_FILE)
@@ -226,17 +232,25 @@ def compute_score(
     ###########################################################################################
     ######                                    PREPROCESS                                 ######
     ###########################################################################################
+    tracker = met_scdrs.util.MemoryTracker()
     if PREPROCESS:
+        tracker.start()
         adata = met_scdrs.normalize(
             h5ad_obj = adata,
             method = PREPROCESS_METHOD,
             variance_clip = VARIANCE_CLIP
         )
-    
+        peak = tracker.stop()
+        if VERBOSE:
+            print(f'peak memory during normalization: {peak:.2f} GB')
+        
     # preprocess with covariates
-    met_scdrs.preprocess(
-        adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False
-    )
+    tracker.start()
+    met_scdrs.preprocess(adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False)
+    peak = tracker.stop()
+    
+    if VERBOSE:
+        print(f'peak memory during preprocessing: {peak:.2f} GB')
     print("")
     
     ###########################################################################################
@@ -254,6 +268,7 @@ def compute_score(
             continue
         
         # compute the score (both disease and control genes)
+        tracker.start()
         df_res = met_scdrs.score_cell(
             adata,
             gene_list,
@@ -263,8 +278,11 @@ def compute_score(
             weight_opt=WEIGHT_OPT,
             return_ctrl_raw_score=FLAG_RETURN_CTRL_RAW_SCORE,
             return_ctrl_norm_score=FLAG_RETURN_CTRL_NORM_SCORE,
-            verbose=True,
+            verbose=VERBOSE,
         )
+        peak = tracker.stop()
+        if VERBOSE:
+            print(f'peak memory during score computation: {peak:.2f} GB')
         
         df_res.iloc[:, 0:6].to_csv(
             os.path.join(OUT_FOLDER, "%s.score.gz" % trait),
