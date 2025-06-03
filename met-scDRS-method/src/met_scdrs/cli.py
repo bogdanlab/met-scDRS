@@ -238,7 +238,8 @@ def compute_score(
         adata = met_scdrs.normalize(
             h5ad_obj = adata,
             method = PREPROCESS_METHOD,
-            variance_clip = VARIANCE_CLIP
+            variance_clip = VARIANCE_CLIP,
+            verbose = VERBOSE
         )
         peak = tracker.stop()
         print(f'peak memory during normalization: {peak:.2f} GB') if VERBOSE else None
@@ -249,9 +250,7 @@ def compute_score(
     # if VERBOSE:
     #     print(f'peak memory during preprocessing: {peak:.2f} GB')
     print("")
-    met_scdrs.util.write_adata_to_csv(adata, '/u/scratch/l/lixinzhe/revision_scratch/batch_regress/scdrs_regress_inplace_fx.csv', subset = True)
-    return
-    
+        
     ###########################################################################################
     ######                                    Compute score                              ######
     ###########################################################################################

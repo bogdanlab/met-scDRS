@@ -15,7 +15,8 @@ from tqdm import tqdm
 def normalize(
     h5ad_obj,
     method : str = 'inverse',
-    variance_clip : int = 5
+    variance_clip : int = 5,
+    verbose = True
 ):
     """
     Preprocess the methylation cell by gene data
@@ -30,6 +31,7 @@ def normalize(
     variance_clip : int
         only genes with greater than specified percentile will be retained
         Default is 5 (i.e., remove low-variance genes under the 5th percentile).
+    verbose : bool
     """
     # print header
     print(f'\n\n\n PREPROCESSING')
@@ -39,7 +41,7 @@ def normalize(
     print(header)
     
     # obtain the memory usage:
-    print(f"Initiating preprocess, memory usage: {get_memory():.2f} MB")
+    print(f"Initiating preprocess, memory usage: {get_memory():.2f} MB") if verbose else None
     
     ###########################################################################################
     ######                                  helper function                              ######
@@ -81,10 +83,10 @@ def normalize(
     ######                                    variance clip                              ######
     ###########################################################################################
     # variance masking and assertion:
-    print('Filtering gene based on variance')
+    print('Filtering gene based on variance') if verbose else None
     gene_variances = compute_variance(preprocessed_data)
     var_threshold = np.percentile(gene_variances, variance_clip)
-    print(f"Variance clip at {variance_clip} percentile: {var_threshold:.5f}")
+    print(f"Variance clip at {variance_clip} percentile: {var_threshold:.5f}") if verbose else None
     assert var_threshold > 0, "all gene variance is not > 0, please increase the variance clipping percentile"
     
     # filter off genes with small variance:
@@ -99,8 +101,8 @@ def normalize(
     
     # method to usage 
     # print our usage information:
-    print(f'Normalization completed, elapsed time: {(time.time() - initial_time):.3f} seconds')
-    print(f"Finished normalization, memory usage: {get_memory():.2f} MB")
+    print(f'Normalization completed, elapsed time: {(time.time() - initial_time):.3f} seconds') if verbose else None
+    print(f"Finished normalization, memory usage: {get_memory():.2f} MB") if verbose else None
     return preprocessed_data
 
 def category2dummy(
@@ -248,7 +250,7 @@ def preprocess(
 
     """
     # print the memory usage:
-    print(f"Starting preprocessing, memory usage: {get_memory():.2f} MB")
+    print(f"Starting preprocessing, memory usage: {get_memory():.2f} MB") if verbose else None
     tracker = met_scdrs.util.MemoryTracker()
     tracker.start()
     
@@ -309,7 +311,7 @@ def preprocess(
         else:
             # Dense mode: regress out covariate and add back mean
             peak = tracker.stop()
-            print(f'peak memory before regression: {peak:.2f} GB')
+            print(f'peak memory before regression: {peak:.2f} GB') if verbose else None
             
             tracker.start()
             adata.X = _reg_out_inplace(adata.X, df_cov.values)
@@ -350,9 +352,8 @@ def preprocess(
 
     adata.uns["SCDRS_PARAM"]["GENE_STATS"] = df_gene
     adata.uns["SCDRS_PARAM"]["CELL_STATS"] = df_cell
-    print(f"Finished preprocessing, memory usage: {get_memory():.2f} MB")
     peak=tracker.stop()
-    print(f'peak memory after regression: {peak:.2f} GB')
+    print(f'peak memory after regression: {peak:.2f} GB') if verbose else None
     return adata if copy else None
 
 def compute_stats(
