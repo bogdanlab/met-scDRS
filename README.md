@@ -10,78 +10,84 @@ This tutorial will illustrate how we used met-scDRS to find:
 ## Finding MDD associated cells in GSE215353 methylome atlas
 ### data download:
 [Single-Cell DNA Methylation and 3D Genome Human Brain Atlas](https://cellxgene.cziscience.com/collections/fdebfda9-bb9a-4b4b-97e5-651097ea07b0)
+[DNA methylation atlas of the mouse brain at single-cell resolution](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132489)
 
-### preprocessing:
-filtered for low variance genes (5th percentile or lower)
-```py
-gene_variances = pd.Series(merged_adata.X.var(axis=0), index=merged_adata.var_names)
-percentile_5th = gene_variances.quantile(0.05)
-variance_mask = gene_variances >= percentile_5th
-merged_adata = merged_adata[:, variance_mask]
+### DATA EXTRACTION:
+if data follows Allcools format similar to mouse data, you can extract the fraction with the following helper script:
+```bash
+python data-extraction.py --input_dir <hdf5_dir> --output_dir <output_dir>
 ```
 
-as well as taking 1-raw fraction:
-```py
-merged_adata.X = 1 - merged_adata.X
+if data is a simple csv where columns are genes, and rows are cells, you can convert it into a h5ad file with the following helper script:
+```bash
+Rscript csv-h5ad-conversion.R --data_matrix <fraction_csv> --output_file <output_h5ad_distination>
 ```
 
-outputting to h5ad file:
-```py
-merged_adata.write('processed-mch.h5ad')
+### Installation of met-scDRS
+```bash
+# Clone the repo
+git clone git@github.com:bogdanlab/met-scDRS.git
+cd met-scDRS/met-scDRS-method/V1.0.0-rc1
+
+# (Optional) Create a new environment
+conda create -n metscdrs-env python=3.10 -y
+conda activate metscdrs-env
+
+# Install in editable mode
+pip install -e .
 ```
-
-full script documented in:
-```sh
-python inverse-fraction.py \
-    --fraction_path ${methylation_csv} \
-    --output_path ${processed_fraction}
-
-```
-options:
- - fraction_path: path to raw fraction csv that you would like to filter for low variance genes and inverse the fraction
- - output_path: path for writing the processed fraction csv
-
-```sh
-python csv-to-h5ad.py \
-    --fraction_path ${processed_fraction}
-    --meta_path ${meta_data_csv}
-    --h5ad_path ${output_h5ad}
-```
-options:
- - fraction_path: path to processed fraction output of inverse-fraction.py
- - meta_data_csv: path to cells' meta data. e.g.: transcription batch, donor
- - h5ad_path: output path for converted h5ad
-
-### Computation:
-```sh
-scdrs compute-score \
-    --h5ad-file ${h5ad_path} \
-    --h5ad-species ${species} \
-    --gs-file ${gs_file} \
-    --gs-species human \
-    --out-folder ${output_dir} \
-    --flag-filter-data False \
-    --flag-raw-count False \
-    --n-ctrl 1000 \
-    --weight_opt "inv_std" \
-    --flag-return-ctrl-raw-score False \
-    --flag-return-ctrl-norm-score True
-```
-options:
- - h5ad-file: the processed h5ad file for with inverse methylation fraction (1-raw fraction)
- - h5ad-species: which species is sequenced in h5ad, supports mouse or human
- - gs-file: gene set file that contain the disease putative genes [more info](https://martinjzhang.github.io/scDRS/file_format.html)
- - gs-species: which species is putative disease genes coded for, supports mouse or human
- - out-folder: folder for output, create subdirectories for each gene set enclosed in gs-file
- - n-ctrl: number of control gene sets to sample
- - flag-return-ctrl-raw-score: if you wish met-scDRS to return raw scores for sampled control genes
- - flag-return-ctrl-norm-score: if you wish met-scDRS to return normalized score for sampled control genes
-
-## Gene set prioritization:
-Compute the gene wise correlation between the processed methylation level and the met-scDRS risk score
-[here](https://github.com/xinzhe-ucla/scDRS-applications/blob/main/code/GSE215353/production/v2.0/visualization/GO-enrichment.R) is how we computed the prioritized genes using met-scDRS risk scores and the processed methylation level. At its core, we use the spearman correlation between risk score and methylation level to prioritized genes
-
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See below for details.
+
+### met-scDRS License (MIT)
+
+Copyright (c) 2025 Xinzhe Li
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+### Includes code from scDRS (MIT License)
+
+Large portions of this software are derived from the scDRS project:
+(https://github.com/martinjzhang/scDRS)
+
+Original license:
+
+Copyright (c) 2021 Martin Jinye Zhang and Kangcheng Hou
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
