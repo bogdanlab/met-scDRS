@@ -28,4 +28,3 @@ met_scdrs compute_score \
     --n_ctrl 1000 \
     --flag_return_ctrl_raw_score False \
     --flag_return_ctrl_norm_score True
-    

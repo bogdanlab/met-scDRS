@@ -9,6 +9,7 @@ import time
 from met_scdrs.util import get_memory
 from anndata import AnnData
 import gc
+from tqdm import tqdm
 
 def normalize(
     h5ad_obj,
@@ -303,7 +304,7 @@ def preprocess(
             )
         else:
             # Dense mode: regress out covariate and add back mean
-            adata.X = reg_out(adata.X, df_cov.values)
+            adata.X = _reg_out_inplace(adata.X, df_cov.values)
             adata.X += v_gene_mean
 
     #             # Note: this version (dense+cov) should produce the exact toydata results
@@ -535,6 +536,61 @@ def reg_out(mat_Y, mat_X):
         return mat_Y_resid.astype(np.float32)
     else:
         return mat_Y_resid
+
+def _reg_out_inplace(mat_Y, mat_X):
+    """Regress mat_X out of mat_Y.
+    
+    Parameters
+    ----------
+    mat_Y : np.ndarray
+        Response variable of shape (n_sample, n_response).
+    mat_X : np.ndarray
+        Covariates of shape (n_sample, n_covariates).
+
+    Returns
+    -------
+    mat_Y : np.ndarray
+        Response variable residual of shape (n_sample, n_response).
+    """
+
+    if sparse.issparse(mat_X):
+        mat_X = mat_X.toarray()
+    else:
+        mat_X = np.array(mat_X)
+    if len(mat_X.shape) == 1:
+        mat_X = mat_X.reshape([-1, 1])
+    
+    if sparse.issparse(mat_Y):
+        mat_Y = mat_Y.toarray()
+    else:
+        mat_Y = np.array(mat_Y)
+    if len(mat_Y.shape) == 1:
+        mat_Y = mat_Y.reshape([-1, 1])
+    
+    # ensure float 32 consistency:
+    if mat_Y.dtype == 'float32' or mat_X.dtype == 'float32':
+        mat_X = mat_X.astype(np.float32, copy = False)
+        mat_Y = mat_Y.astype(np.float32, copy = False)
+    
+    # Compute inverse(X_t * X) * X_t with scaling trick:
+    n_sample = mat_Y.shape[0]
+    mat_xtx = np.dot(mat_X.T, mat_X) / n_sample
+    
+    # regress in place:
+    for j in tqdm(range(mat_Y.shape[1])):
+        y_j = mat_Y[:, j]
+        xty_j = np.dot(mat_X.T, y_j) / n_sample
+        coef_j = np.linalg.solve(mat_xtx, xty_j)
+        mat_Y[:, j] -= np.dot(mat_X, coef_j)
+    
+    if mat_Y.shape[1] == 1:
+        mat_Y = mat_Y.reshape([-1])
+    
+    # if the original float is 32, keep the float 32 residuals as well to prevent up-scaling
+    if mat_Y.dtype != 'float32':
+        return mat_Y.astype(np.float32)
+    else:
+        return mat_Y
 
 def _get_mean_var(sparse_X, axis=0, weights=None):
     """

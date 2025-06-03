@@ -55,19 +55,23 @@ def load_h5ad(h5ad_file : str):
         )
     return adata
 
-def write_adata_to_csv(h5ad_obj, csv_out):
+def write_adata_to_csv(h5ad_obj, csv_out, subset = True):
     # Convert adata.X to a dense matrix if it's sparse
     if scipy.sparse.issparse(h5ad_obj.X):
         matrix = h5ad_obj.X.toarray()
     else:
         matrix = h5ad_obj.X
-
+    
     # Create DataFrame with proper labels
     df = pd.DataFrame(
         matrix,
         index=h5ad_obj.obs_names,   # cell IDs as row index
         columns=h5ad_obj.var_names  # gene names as column names
     )
+    
+    if subset and len(df) > 1000:
+        df = df.iloc[:1000, ]
+    
     df.to_csv(csv_out)
     return df
 

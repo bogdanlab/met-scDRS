@@ -249,9 +249,13 @@ def compute_score(
     met_scdrs.preprocess(adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False)
     peak = tracker.stop()
     
+    # output for testing:
+    met_scdrs.util.write_adata_to_csv(adata, '/u/scratch/l/lixinzhe/revision_scratch/batch_regress/scdrs_regress_inplace_fx.csv', subset = True)
+    
     if VERBOSE:
         print(f'peak memory during preprocessing: {peak:.2f} GB')
     print("")
+    return
     
     ###########################################################################################
     ######                                    Compute score                              ######
