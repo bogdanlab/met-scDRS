@@ -7,6 +7,7 @@ from typing import List
 import warnings
 import time
 from met_scdrs.util import get_memory
+import met_scdrs
 from anndata import AnnData
 import gc
 from tqdm import tqdm
@@ -155,7 +156,7 @@ def category2dummy(
     return df
 
 def preprocess(
-    data, cov=None, n_mean_bin=20, n_var_bin=20, n_chunk=None, copy=False
+    data, cov=None, n_mean_bin=20, n_var_bin=20, n_chunk=None, copy=False, verbose = True,
 ):
     """
     Preprocess single-cell data for scDRS analysis.
@@ -198,6 +199,7 @@ def preprocess(
         using _get_mean_var_implicit_cov_corr. If n_chunk is None, set to 5/sparsity.
     copy : bool, default=False
         Return a copy instead of writing to data.
+    verbose: bool, default=True
 
 
     Returns
@@ -247,6 +249,8 @@ def preprocess(
     """
     # print the memory usage:
     print(f"Starting preprocessing, memory usage: {get_memory():.2f} MB")
+    tracker = met_scdrs.util.MemoryTracker()
+    tracker.start()
     
     adata = data.copy() if copy else data
     n_cell, n_gene = adata.shape
@@ -282,7 +286,7 @@ def preprocess(
         df_cov.fillna(df_cov.mean(), inplace=True)
 
         # Add const term if df_cov does not already have it (or a linear combination of it)
-        v_resid = reg_out(np.ones(n_cell), df_cov.values)
+        v_resid = _reg_out_inplace(np.ones(n_cell), df_cov.values)
         if (v_resid ** 2).mean() > 0.01:
             df_cov["SCDRS_CONST"] = 1
 
@@ -304,8 +308,17 @@ def preprocess(
             )
         else:
             # Dense mode: regress out covariate and add back mean
+            peak = tracker.stop()
+            print(f'peak memory before regression: {peak:.2f} GB')
+            
+            tracker.start()
             adata.X = _reg_out_inplace(adata.X, df_cov.values)
             adata.X += v_gene_mean
+            peak = tracker.stop()
+            
+            print(f'peak memory during regression: {peak:.2f} GB') if verbose else None
+    tracker.start()
+
 
     #             # Note: this version (dense+cov) should produce the exact toydata results
     #             adata.var["mean"] = adata.X.mean(axis=0).T
@@ -332,11 +345,14 @@ def preprocess(
         n_mean_bin=n_mean_bin,
         n_var_bin=n_var_bin,
         n_chunk=n_chunk,
+        verbose = verbose
     )
 
     adata.uns["SCDRS_PARAM"]["GENE_STATS"] = df_gene
     adata.uns["SCDRS_PARAM"]["CELL_STATS"] = df_cell
     print(f"Finished preprocessing, memory usage: {get_memory():.2f} MB")
+    peak=tracker.stop()
+    print(f'peak memory after regression: {peak:.2f} GB')
     return adata if copy else None
 
 def compute_stats(
@@ -346,6 +362,7 @@ def compute_stats(
     n_mean_bin=20,
     n_var_bin=20,
     n_chunk=20,
+    verbose = True,
 ):
     """
     Compute gene-level and cell-level statstics used for scDRS analysis. `adata`
@@ -375,6 +392,7 @@ def compute_stats(
     n_chunk : int, default=10
         Number of chunks to split the data into when computing mean and variance
         using _get_mean_var_implicit_cov_corr.
+    verbose: bool, default=True
 
     Returns
     -------
@@ -413,12 +431,19 @@ def compute_stats(
         ],
     )
     df_cell = pd.DataFrame(index=adata.obs_names, columns=["mean", "var"])
+    
     # Gene-level statistics
     if not implicit_cov_corr:
+            
+        # measure ram usage:
+        tracker = met_scdrs.util.MemoryTracker()
+        tracker.start()
+        
         # Normal mode
         df_gene["mean"], df_gene["var"] = _get_mean_var(
             adata.X, axis=0, weights=cell_weight
         )
+        
         # Get the mean and var for the non-log-scale size-factor-normalized counts
         # It is highly correlated to the non-size-factor-normalized counts
         if sparse.issparse(adata.X):  # sp sparse matrix
@@ -429,6 +454,10 @@ def compute_stats(
             temp_X, axis=0, weights=cell_weight
         )
         del temp_X
+        
+        peak = tracker.stop()
+        print(f'peak memory during _get_mean_var: {peak:.2f} GB') if verbose else None
+    
     else:
         # Implicit covariate correction mode
         df_gene["mean"], df_gene["var"] = _get_mean_var_implicit_cov_corr(
@@ -438,6 +467,8 @@ def compute_stats(
             adata, transform_func=np.expm1, axis=0, n_chunk=n_chunk, weights=cell_weight
         )
 
+    tracker.start()
+    
     # Borrowed from scanpy _highly_variable_genes_seurat_v3
     not_const = df_gene["ct_var"].values > 0
     if (df_gene["ct_mean"].values <= 0).sum() > 0:
@@ -455,6 +486,11 @@ def compute_stats(
     df_gene["var_tech"] = df_gene["var"] * df_gene["ct_var_tech"] / df_gene["ct_var"]
     df_gene.loc[df_gene["var_tech"].isna(), "var_tech"] = 0
 
+    peak = tracker.stop()
+    print(f'peak memory during tech_var computation: {peak:.2f} GB') if verbose else None
+    
+    tracker.start()
+    
     # Add n_mean_bin*n_var_bin mean_var bins
     n_bin_max = np.floor(np.sqrt(adata.shape[1] / 10)).astype(int)
     if (n_mean_bin > n_bin_max) | (n_var_bin > n_bin_max):
@@ -472,11 +508,14 @@ def compute_stats(
         )
         df_gene.loc[ind_select, "mean_var"] = ["%d.%d" % (bin_, x) for x in v_var_bin]
     
+    peak = tracker.stop()
+    print(f'peak memory during bin computation: {peak:.2f} GB') if verbose else None
+    
     ##########################################################
     ############# ADD GENE LENGTH BIN LATER HERE ############
     ##########################################################
     
-    
+    tracker.start()
     # Cell-level statistics
     if not implicit_cov_corr:
         # Normal mode
@@ -486,7 +525,10 @@ def compute_stats(
         df_cell["mean"], df_cell["var"] = _get_mean_var_implicit_cov_corr(
             adata, axis=1, n_chunk=n_chunk
         )
-
+    
+    peak = tracker.stop()
+    print(f'peak memory during cell stat computation: {peak:.2f} GB') if verbose else None
+    
     return df_gene, df_cell
 
 ##############################################################################
@@ -556,21 +598,20 @@ def _reg_out_inplace(mat_Y, mat_X):
     if sparse.issparse(mat_X):
         mat_X = mat_X.toarray()
     else:
-        mat_X = np.array(mat_X)
+        mat_X = np.asarray(mat_X)
     if len(mat_X.shape) == 1:
         mat_X = mat_X.reshape([-1, 1])
     
     if sparse.issparse(mat_Y):
         mat_Y = mat_Y.toarray()
     else:
-        mat_Y = np.array(mat_Y)
+        mat_Y = np.asarray(mat_Y)
     if len(mat_Y.shape) == 1:
         mat_Y = mat_Y.reshape([-1, 1])
     
     # ensure float 32 consistency:
-    if mat_Y.dtype == 'float32' or mat_X.dtype == 'float32':
-        mat_X = mat_X.astype(np.float32, copy = False)
-        mat_Y = mat_Y.astype(np.float32, copy = False)
+    mat_X = mat_X.astype(np.float32, copy = False)
+    mat_Y = mat_Y.astype(np.float32, copy = False)
     
     # Compute inverse(X_t * X) * X_t with scaling trick:
     n_sample = mat_Y.shape[0]

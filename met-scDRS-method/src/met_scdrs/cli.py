@@ -241,20 +241,15 @@ def compute_score(
             variance_clip = VARIANCE_CLIP
         )
         peak = tracker.stop()
-        if VERBOSE:
-            print(f'peak memory during normalization: {peak:.2f} GB')
+        print(f'peak memory during normalization: {peak:.2f} GB') if VERBOSE else None
         
     # preprocess with covariates
-    tracker.start()
-    met_scdrs.preprocess(adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False)
-    peak = tracker.stop()
+    met_scdrs.preprocess(adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False, verbose = VERBOSE)
     
-    # output for testing:
-    met_scdrs.util.write_adata_to_csv(adata, '/u/scratch/l/lixinzhe/revision_scratch/batch_regress/scdrs_regress_inplace_fx.csv', subset = True)
-    
-    if VERBOSE:
-        print(f'peak memory during preprocessing: {peak:.2f} GB')
+    # if VERBOSE:
+    #     print(f'peak memory during preprocessing: {peak:.2f} GB')
     print("")
+    met_scdrs.util.write_adata_to_csv(adata, '/u/scratch/l/lixinzhe/revision_scratch/batch_regress/scdrs_regress_inplace_fx.csv', subset = True)
     return
     
     ###########################################################################################
@@ -285,8 +280,7 @@ def compute_score(
             verbose=VERBOSE,
         )
         peak = tracker.stop()
-        if VERBOSE:
-            print(f'peak memory during score computation: {peak:.2f} GB')
+        print(f'peak memory during score computation: {peak:.2f} GB') if VERBOSE else None
         
         df_res.iloc[:, 0:6].to_csv(
             os.path.join(OUT_FOLDER, "%s.score.gz" % trait),
