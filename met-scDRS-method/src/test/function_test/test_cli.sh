@@ -9,10 +9,11 @@ met_scdrs compute_score \
     --gs_species human \
     --out_folder '/u/scratch/l/lixinzhe/revision_scratch/v1.0.0-rc1' \
     --ctrl_match_opt mean_var \
-    --weight_opt inv_std \
+    --weight_opt vs \
     --n_ctrl 1000 \
     --flag_return_ctrl_raw_score False \
-    --flag_return_ctrl_norm_score True
+    --flag_return_ctrl_norm_score True \
+    --verbose True
     
 met_scdrs compute_score \
     --h5ad_file '/u/home/l/lixinzhe/project-geschwind/data/Liu_et_al_2021_methylation_gse132489/simulation-subset-GSE132489-mch.h5ad' \

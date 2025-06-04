@@ -166,8 +166,8 @@ def compute_score(
     # matching control genes should be mean_var:
     if CTRL_MATCH_OPT not in ["mean_var"]:
         raise ValueError("--ctrl_match_opt mean_var should be mean_var")
-    if WEIGHT_OPT not in ['inv_std']:
-        raise ValueError("--weight_opt should be inv_std")
+    if WEIGHT_OPT not in ['inv_std', 'vs']:
+        raise ValueError("--weight_opt should be inv_std or vs")
     # also check folder:
     if not met_scdrs.util.check_folder(OUT_FOLDER):
         raise ValueError("--out_folder does not exist")
@@ -245,12 +245,19 @@ def compute_score(
         print(f'peak memory during normalization: {peak:.2f} GB') if VERBOSE else None
         
     # preprocess with covariates
-    met_scdrs.preprocess(adata, cov=df_cov, n_mean_bin=20, n_var_bin=20, copy=False, verbose = VERBOSE)
+    met_scdrs.preprocess(
+        adata,
+        cov=df_cov,
+        n_mean_bin=20,
+        n_var_bin=20,
+        copy=False,
+        weight_option=WEIGHT_OPT,
+        verbose = VERBOSE)
     
     # if VERBOSE:
     #     print(f'peak memory during preprocessing: {peak:.2f} GB')
     print("")
-        
+    
     ###########################################################################################
     ######                                    Compute score                              ######
     ###########################################################################################

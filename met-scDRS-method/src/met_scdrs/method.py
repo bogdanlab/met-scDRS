@@ -106,11 +106,19 @@ def score_cell(
         "GENE_STATS" in adata.uns["SCDRS_PARAM"]
     ), "adata.uns['SCDRS_PARAM']['GENE_STATS'] not found, run `scdrs.pp.preprocess` first"
 
-    gene_stats_set_expect = {"mean", "var", "var_tech"}
-    gene_stats_set = set(adata.uns["SCDRS_PARAM"]["GENE_STATS"])
-    assert (
-        len(gene_stats_set_expect - gene_stats_set) == 0
-    ), "One of 'mean', 'var', 'var_tech' not found in adata.uns['SCDRS_PARAM']['GENE_STATS'], run `scdrs.pp.preprocess` first"
+    if weight_opt == 'vs':
+        gene_stats_set_expect = {"mean", "var", "var_tech"}
+        gene_stats_set = set(adata.uns["SCDRS_PARAM"]["GENE_STATS"])
+        assert (
+            len(gene_stats_set_expect - gene_stats_set) == 0
+        ), "One of 'mean', 'var', 'var_tech' not found in adata.uns['SCDRS_PARAM']['GENE_STATS'], run `scdrs.pp.preprocess` first"
+
+    else:
+        gene_stats_set_expect = {"mean", "var"}
+        gene_stats_set = set(adata.uns["SCDRS_PARAM"]["GENE_STATS"])
+        assert (
+            len(gene_stats_set_expect - gene_stats_set) == 0
+        ), "One of 'mean', 'var' not found in adata.uns['SCDRS_PARAM']['GENE_STATS'], run `scdrs.pp.preprocess` first"
 
     # Check if ctrl_match_key is in GENE_STATS
     assert ctrl_match_key in adata.uns["SCDRS_PARAM"]["GENE_STATS"], (

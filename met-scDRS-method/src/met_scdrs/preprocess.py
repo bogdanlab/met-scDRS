@@ -158,7 +158,14 @@ def category2dummy(
     return df
 
 def preprocess(
-    data, cov=None, n_mean_bin=20, n_var_bin=20, n_chunk=None, copy=False, verbose = True,
+    data,
+    weight_option,
+    cov=None,
+    n_mean_bin=20,
+    n_var_bin=20,
+    n_chunk=None,
+    copy=False,
+    verbose = True,
 ):
     """
     Preprocess single-cell data for scDRS analysis.
@@ -189,6 +196,8 @@ def preprocess(
     data : anndata.AnnData
         Single-cell data of shape (n_cell, n_gene). Assumed
         to be size-factor-normalized and log1p-transformed.
+    weight_option : str
+        weighting option, same as cli input
     cov : pandas.DataFrame, default=None
         Covariates of shape (n_cell, n_cov). Should contain
         a constant term and have values for at least 75% cells.
@@ -225,10 +234,10 @@ def preprocess(
 
         - "mean" : mean expression in log scale.
         - "var" : expression variance in log scale.
-        - "var_tech" : technical variance in log scale.
+        - "var_tech" : technical variance in log scale. if weighting option is vs
         - "ct_mean" : mean expression in original non-log scale.
         - "ct_var" : expression variance in original non-log scale.
-        - "ct_var_tech" : technical variance in original non-log scale.
+        - "ct_var_tech" : technical variance in original non-log scale. if weighting option is vs
         - "mean_var" : n_mean_bin * n_var_bin mean-variance bins
 
     CELL_STATS : pandas.DataFrame
@@ -320,8 +329,8 @@ def preprocess(
             
             print(f'peak memory during regression: {peak:.2f} GB') if verbose else None
     tracker.start()
-
-
+    
+    
     #             # Note: this version (dense+cov) should produce the exact toydata results
     #             adata.var["mean"] = adata.X.mean(axis=0).T
     #             adata.X -= adata.var["mean"].values
@@ -339,9 +348,10 @@ def preprocess(
             n_chunk = 20
     
     cell_weight = None
-
+    
     df_gene, df_cell = compute_stats(
         adata,
+        weight_option = weight_option,
         implicit_cov_corr=implicit_cov_corr,
         cell_weight=cell_weight,
         n_mean_bin=n_mean_bin,
@@ -358,6 +368,7 @@ def preprocess(
 
 def compute_stats(
     adata,
+    weight_option,
     implicit_cov_corr=False,
     cell_weight=None,
     n_mean_bin=20,
@@ -379,6 +390,8 @@ def compute_stats(
     ----------
     adata : anndata.AnnData
         Single-cell data of shape (n_cell, n_gene). Assumed to be log-scale.
+    weight_opt : str
+        weighting option, same as cli input
     implicit_cov_corr : bool, default=False
         If True, compute statistics for the implicit corrected data
         `adata.X + COV_MAT * COV_BETA + COV_GENE_MEAN`. Otherwise, compute
@@ -444,48 +457,55 @@ def compute_stats(
         df_gene["mean"], df_gene["var"] = _get_mean_var(
             adata.X, axis=0, weights=cell_weight
         )
+        peak = tracker.stop()
+        print(f'peak memory during normal mode of _get_mean_var: {peak:.2f} GB') if verbose else None
         
         # Get the mean and var for the non-log-scale size-factor-normalized counts
         # It is highly correlated to the non-size-factor-normalized counts
-        if sparse.issparse(adata.X):  # sp sparse matrix
-            temp_X = adata.X.copy().expm1()  # exp(X)-1 to get ct matrix from logct
-        else:
-            temp_X = np.expm1(adata.X)  # numpy ndarray
-        df_gene["ct_mean"], df_gene["ct_var"] = _get_mean_var(
-            temp_X, axis=0, weights=cell_weight
-        )
-        del temp_X
+        tracker.start()
+                
+        if weight_option == 'vs':
+            if sparse.issparse(adata.X):  # sp sparse matrix
+                temp_X = adata.X.copy().expm1()  # exp(X)-1 to get ct matrix from logct
+            else:
+                temp_X = np.expm1(adata.X)  # numpy ndarray
+            df_gene["ct_mean"], df_gene["ct_var"] = _get_mean_var(
+                temp_X, axis=0, weights=cell_weight
+            )
+            del temp_X
         
         peak = tracker.stop()
-        print(f'peak memory during _get_mean_var: {peak:.2f} GB') if verbose else None
+        print(f'peak memory during count mean var: {peak:.2f} GB') if verbose else None
     
     else:
         # Implicit covariate correction mode
         df_gene["mean"], df_gene["var"] = _get_mean_var_implicit_cov_corr(
             adata, axis=0, n_chunk=n_chunk, weights=cell_weight
         )
-        df_gene["ct_mean"], df_gene["ct_var"] = _get_mean_var_implicit_cov_corr(
-            adata, transform_func=np.expm1, axis=0, n_chunk=n_chunk, weights=cell_weight
-        )
+        if weight_option == 'vs':
+            df_gene["ct_mean"], df_gene["ct_var"] = _get_mean_var_implicit_cov_corr(
+                adata, transform_func=np.expm1, axis=0, n_chunk=n_chunk, weights=cell_weight
+            )
 
     tracker.start()
     
-    # Borrowed from scanpy _highly_variable_genes_seurat_v3
-    not_const = df_gene["ct_var"].values > 0
-    if (df_gene["ct_mean"].values <= 0).sum() > 0:
-        # Exclude genes with negative values (usually small)
-        warnings.warn("%d genes with ct_mean<0" % (df_gene["ct_mean"].values < 0).sum())
-        not_const = not_const & (df_gene["ct_mean"].values > 0)
-    estimat_var = np.zeros(adata.shape[1], dtype=np.float64)
-    y = np.log10(df_gene["ct_var"].values[not_const])
-    x = np.log10(df_gene["ct_mean"].values[not_const])
-    model = loess(x, y, span=0.3, degree=2)
-    model.fit()
-    estimat_var[not_const] = model.outputs.fitted_values
-    df_gene["ct_var_tech"] = 10 ** estimat_var
-    # Recipe from Frost Nucleic Acids Research 2020
-    df_gene["var_tech"] = df_gene["var"] * df_gene["ct_var_tech"] / df_gene["ct_var"]
-    df_gene.loc[df_gene["var_tech"].isna(), "var_tech"] = 0
+    if weight_option == 'vs':    
+        # Borrowed from scanpy _highly_variable_genes_seurat_v3
+        not_const = df_gene["ct_var"].values > 0
+        if (df_gene["ct_mean"].values <= 0).sum() > 0:
+            # Exclude genes with negative values (usually small)
+            warnings.warn("%d genes with ct_mean<0" % (df_gene["ct_mean"].values < 0).sum())
+            not_const = not_const & (df_gene["ct_mean"].values > 0)
+        estimat_var = np.zeros(adata.shape[1], dtype=np.float64)
+        y = np.log10(df_gene["ct_var"].values[not_const])
+        x = np.log10(df_gene["ct_mean"].values[not_const])
+        model = loess(x, y, span=0.3, degree=2)
+        model.fit()
+        estimat_var[not_const] = model.outputs.fitted_values
+        df_gene["ct_var_tech"] = 10 ** estimat_var
+        # Recipe from Frost Nucleic Acids Research 2020
+        df_gene["var_tech"] = df_gene["var"] * df_gene["ct_var_tech"] / df_gene["ct_var"]
+        df_gene.loc[df_gene["var_tech"].isna(), "var_tech"] = 0
 
     peak = tracker.stop()
     print(f'peak memory during tech_var computation: {peak:.2f} GB') if verbose else None
