@@ -39,6 +39,7 @@ def compute_score(
     flag_return_ctrl_raw_score: bool = False,
     flag_return_ctrl_norm_score: bool = True,
     diagnostic = False,
+    diagnostic_dir = None,
     verbose: bool = True
 ):
     """
@@ -82,6 +83,8 @@ def compute_score(
         If True, normalized control scores will be output. Default is True.
     diagnostic : bool, optional
         if True, plot out the control gene set drawn bins. Default is False.
+    diagnostic_dir : str, optional
+        directory to store plots for diagnositic. Default is None.
     verbose : bool, optional
         If True, chatty about processing.
 
@@ -103,6 +106,7 @@ def compute_score(
         --flag_return_ctrl_raw_score False \
         --flag_return_ctrl_norm_score True \
         --diagnositic False \
+        --diagnostic_dir None \
         --verbose True
     """
     # record system start time:
@@ -125,7 +129,8 @@ def compute_score(
     N_CTRL = n_ctrl
     FLAG_RETURN_CTRL_RAW_SCORE = flag_return_ctrl_raw_score
     FLAG_RETURN_CTRL_NORM_SCORE = flag_return_ctrl_norm_score
-    DIAGNOSITC = diagnostic
+    DIAGNOSTIC = diagnostic
+    DIAGNOSTIC_DIR = diagnostic_dir
     VERBOSE = verbose
     
     # if the species name doesn't match, convert the species name:
@@ -152,7 +157,8 @@ def compute_score(
     header += "--flag_return_ctrl_raw_score %s \\\n" % FLAG_RETURN_CTRL_RAW_SCORE
     header += "--flag_return_ctrl_norm_score %s \\\n" % FLAG_RETURN_CTRL_NORM_SCORE
     header += "--out_folder %s\n" % OUT_FOLDER
-    header += "--diagnostic %s\n" % DIAGNOSITC
+    header += "--diagnostic %s\n" % DIAGNOSTIC
+    header += "--diagnostic_dir %s\n" % DIAGNOSTIC_DIR
     header += "--verbose %s \n" % VERBOSE
     print(header)
     
@@ -260,12 +266,13 @@ def compute_score(
         weight_option=WEIGHT_OPT,
         verbose = VERBOSE)
     
-    if diagnostic:
+    if DIAGNOSTIC:
         met_scdrs.util.ctrl_match_bin(
             adata,
             dict_gs = dict_gs,
             ctrl_match_key=CTRL_MATCH_OPT,
-            plot_dir = '/u/scratch/l/lixinzhe/revision_scratch/batch_sampling/')
+            plot_dir = DIAGNOSTIC_DIR
+        )
         
     
     print("")
