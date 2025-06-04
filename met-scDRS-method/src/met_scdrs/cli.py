@@ -38,6 +38,7 @@ def compute_score(
     n_ctrl: int = 1000,
     flag_return_ctrl_raw_score: bool = False,
     flag_return_ctrl_norm_score: bool = True,
+    diagnostic = False,
     verbose: bool = True
 ):
     """
@@ -79,8 +80,10 @@ def compute_score(
         If True, the full set of raw control scores will be output. Default is False.
     flag_return_ctrl_norm_score : bool, optional
         If True, normalized control scores will be output. Default is True.
+    diagnostic : bool, optional
+        if True, plot out the control gene set drawn bins. Default is False.
     verbose : bool, optional
-        If True, chatty about processing
+        If True, chatty about processing.
 
     Examples
     --------
@@ -99,6 +102,7 @@ def compute_score(
         --n_ctrl 1000 \
         --flag_return_ctrl_raw_score False \
         --flag_return_ctrl_norm_score True \
+        --diagnositic False \
         --verbose True
     """
     # record system start time:
@@ -121,6 +125,7 @@ def compute_score(
     N_CTRL = n_ctrl
     FLAG_RETURN_CTRL_RAW_SCORE = flag_return_ctrl_raw_score
     FLAG_RETURN_CTRL_NORM_SCORE = flag_return_ctrl_norm_score
+    DIAGNOSITC = diagnostic
     VERBOSE = verbose
     
     # if the species name doesn't match, convert the species name:
@@ -147,6 +152,7 @@ def compute_score(
     header += "--flag_return_ctrl_raw_score %s \\\n" % FLAG_RETURN_CTRL_RAW_SCORE
     header += "--flag_return_ctrl_norm_score %s \\\n" % FLAG_RETURN_CTRL_NORM_SCORE
     header += "--out_folder %s\n" % OUT_FOLDER
+    header += "--diagnostic %s\n" % DIAGNOSITC
     header += "--verbose %s \n" % VERBOSE
     print(header)
     
@@ -254,9 +260,16 @@ def compute_score(
         weight_option=WEIGHT_OPT,
         verbose = VERBOSE)
     
-    # if VERBOSE:
-    #     print(f'peak memory during preprocessing: {peak:.2f} GB')
+    if diagnostic:
+        met_scdrs.util.ctrl_match_bin(
+            adata,
+            dict_gs = dict_gs,
+            ctrl_match_key=CTRL_MATCH_OPT,
+            plot_dir = '/u/scratch/l/lixinzhe/revision_scratch/batch_sampling/')
+        
+    
     print("")
+    return
     
     ###########################################################################################
     ######                                    Compute score                              ######
