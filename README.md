@@ -75,9 +75,10 @@ met-scdrs compute_score \
     --verbose True
 
 ```
+
 ### DIAGNOSTIC AND VERBOSE
-met-scDRS supports RAM memory tracking and return to CLI 
-also support --verbose flag to visualize control gene set distribution with heatmap visualization
+met-scDRS supports --verbose for RAM memory tracking and return to CLI 
+also support --diagnostic and --diagnostic_dir flag to visualize control gene set distribution
 
 ```sh
 met-scdrs compute_score \
