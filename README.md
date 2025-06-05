@@ -75,6 +75,30 @@ met-scdrs compute_score \
     --verbose True
 
 ```
+### DIAGNOSTIC AND VERBOSE
+met-scDRS supports RAM memory tracking and return to CLI 
+also support --verbose flag to visualize control gene set distribution with heatmap visualization
+
+```sh
+met-scdrs compute_score \
+    --h5ad_file <h5ad_file> \
+    --preprocess True \
+    --preprocess_method inverse \
+    --variance_clip 5 \
+    --h5ad_species human \
+    --gs_file <gs_file> \
+    --gs_species human \
+    --out_folder <out_folder> \
+    --ctrl_match_opt mean_var \
+    --weight_opt inv_std \
+    --n_ctrl 1000 \
+    --flag_return_ctrl_raw_score False \
+    --flag_return_ctrl_norm_score True \
+    --diagnostic True \
+    --diagnostic_dir <diagnostic_dir> \
+    --verbose True
+
+```
 
 ## License
 
