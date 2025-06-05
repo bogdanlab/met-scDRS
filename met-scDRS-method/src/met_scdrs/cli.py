@@ -84,7 +84,7 @@ def compute_score(
     diagnostic : bool, optional
         if True, plot out the control gene set drawn bins. Default is False.
     diagnostic_dir : str, optional
-        directory to store plots for diagnositic. Default is None.
+        directory to store plots for diagnostic. Default is None.
     verbose : bool, optional
         If True, chatty about processing.
 
@@ -105,7 +105,7 @@ def compute_score(
         --n_ctrl 1000 \
         --flag_return_ctrl_raw_score False \
         --flag_return_ctrl_norm_score True \
-        --diagnositic False \
+        --diagnostic False \
         --diagnostic_dir None \
         --verbose True
     """
@@ -267,7 +267,7 @@ def compute_score(
         verbose = VERBOSE)
     
     if DIAGNOSTIC:
-        met_scdrs.util.ctrl_match_bin(
+        met_scdrs.diagnostic.ctrl_match_bin(
             adata,
             dict_gs = dict_gs,
             ctrl_match_key=CTRL_MATCH_OPT,
