@@ -9,8 +9,9 @@ This tutorial will illustrate how we used met-scDRS to find:
 
 ## Finding MDD associated cells in GSE215353 methylome atlas
 ### data download:
-[Single-Cell DNA Methylation and 3D Genome Human Brain Atlas](https://cellxgene.cziscience.com/collections/fdebfda9-bb9a-4b4b-97e5-651097ea07b0)
-[DNA methylation atlas of the mouse brain at single-cell resolution](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132489)
+- [Single-Cell DNA Methylation and 3D Genome Human Brain Atlas](https://cellxgene.cziscience.com/collections/fdebfda9-bb9a-4b4b-97e5-651097ea07b0)
+
+- [DNA methylation atlas of the mouse brain at single-cell resolution](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132489)
 
 ### DATA EXTRACTION:
 if data follows Allcools format similar to mouse data, you can extract the fraction with the following helper script:
@@ -27,7 +28,7 @@ Rscript csv-h5ad-conversion.R --data_matrix <fraction_csv> --output_file <output
 ```bash
 # Clone the repo
 git clone git@github.com:bogdanlab/met-scDRS.git
-cd met-scDRS/met-scDRS-method/V1.0.0-rc1
+cd met-scDRS/met-scDRS-method/src
 
 # (Optional) Create a new environment
 conda create -n metscdrs-env python=3.10 -y
@@ -80,7 +81,7 @@ met-scdrs compute_score \
 met-scDRS supports --verbose for RAM memory tracking and return to CLI 
 also support --diagnostic and --diagnostic_dir flag to visualize control gene set distribution
 
-```sh
+```bash
 met-scdrs compute_score \
     --h5ad_file <h5ad_file> \
     --preprocess True \
