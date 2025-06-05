@@ -150,11 +150,9 @@ def ctrl_match_bin(preprocessed_h5ad, dict_gs, ctrl_match_key, plot_dir = None):
     # obtain the matrix for how the background gene is distributed:
     control_bin = gene_stats[ctrl_match_key]
     axis_num, average_gene_in_bin, bin_decompressed = _bin_formatter(control_bin)
-    print(f'{axis_num} way binning detected, average gene in bin across all genes in h5ad: {average_gene_in_bin}')
     
     # for each of the gene set, understand where the disease genes are distributed:
     for disease, geneset in dict_gs.items():
-        print(disease)
         disease_gene_bin = control_bin.loc[control_bin.index.isin(geneset[0]), ]
         axis_num, average_gene_in_bin, disease_bin_decompressed = _bin_formatter(disease_gene_bin)
         
@@ -178,6 +176,12 @@ def ctrl_match_bin(preprocessed_h5ad, dict_gs, ctrl_match_key, plot_dir = None):
                 plt.tight_layout()
                 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
                 plt.close()
+            else:
+                print('')
+                print(f'processing diseases {disease}')
+                print(f'{axis_num} way binning detected, average disease gene in bin: {average_gene_in_bin}')
+                print(f'recommend setting plot_dir to obtain getting fraction plot if diagnostic is important')
+                print('')
                 
         if axis_num == 3:
             print('do something else')
