@@ -264,6 +264,7 @@ def compute_score(
         n_var_bin=20,
         copy=False,
         weight_option=WEIGHT_OPT,
+        ctrl_match_key=CTRL_MATCH_OPT,
         verbose = VERBOSE)
     
     if DIAGNOSTIC:

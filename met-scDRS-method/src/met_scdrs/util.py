@@ -151,6 +151,45 @@ def load_homolog_mapping(src_species: str, dst_species: str) -> dict:
 
     return dic_map
 
+def load_gencode(species):
+    """
+    Load gene info from gencode
+    
+    Parameters
+    ----------
+    species : str
+        One of 'mmusculus', 'mouse', 'hsapiens', or 'human'
+    """
+    species_name = convert_species_name(species)
+    
+    if species_name == 'mmusculus':
+        gene_info = pd.read_csv(
+            os.path.join(os.path.dirname(__file__), "data/gencode.vM37.chr_patch_hapl_scaff.annotation.gtf.gz"),
+            sep = "\t",
+            comment = '#',
+            header = None,
+            names = ['chr', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame', 'attribute']
+        )
+        
+        # Keep only gene entries
+        gene_info = gene_info[gene_info['feature'] == 'gene']
+        gene_info['gene_name'] = gene_info['attribute'].str.extract('gene_name "([^"]+)"')
+        gene_info['gene_length'] = gene_info['end'] - gene_info['start'] + 1
+    
+    else:
+        gene_info = pd.read_csv(
+            os.path.join(os.path.dirname(__file__), "data/gencode.v48.chr_patch_hapl_scaff.annotation.gtf.gz"),
+            sep = "\t",
+            comment = '#',
+            header = None,
+            names = ['chr', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame', 'attribute']
+        )
+        
+        # Keep only gene entries
+        gene_info = gene_info[gene_info['feature'] == 'gene']
+        gene_info['gene_name'] = gene_info['attribute'].str.extract('gene_name "([^"]+)"')
+        gene_info['gene_length'] = gene_info['end'] - gene_info['start'] + 1
+    return gene_info
 
 def load_gs(
     gs_path: str,

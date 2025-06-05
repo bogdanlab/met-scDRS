@@ -11,6 +11,7 @@ import met_scdrs
 from anndata import AnnData
 import gc
 from tqdm import tqdm
+import os
 
 def normalize(
     h5ad_obj,
@@ -160,6 +161,7 @@ def category2dummy(
 def preprocess(
     data,
     weight_option,
+    ctrl_match_key,
     cov=None,
     n_mean_bin=20,
     n_var_bin=20,
@@ -198,6 +200,9 @@ def preprocess(
         to be size-factor-normalized and log1p-transformed.
     weight_option : str
         weighting option, same as cli input
+    ctrl_match_key : str, default="mean_var"
+        Gene-level statistic used for matching control and disease genes;
+        should be in `data.uns["SCDRS_PARAM"]["GENE_STATS"]`.
     cov : pandas.DataFrame, default=None
         Covariates of shape (n_cell, n_cov). Should contain
         a constant term and have values for at least 75% cells.
@@ -352,6 +357,7 @@ def preprocess(
     df_gene, df_cell = compute_stats(
         adata,
         weight_option = weight_option,
+        ctrl_match_key = ctrl_match_key,
         implicit_cov_corr=implicit_cov_corr,
         cell_weight=cell_weight,
         n_mean_bin=n_mean_bin,
@@ -369,10 +375,12 @@ def preprocess(
 def compute_stats(
     adata,
     weight_option,
+    ctrl_match_key,
     implicit_cov_corr=False,
     cell_weight=None,
-    n_mean_bin=20,
-    n_var_bin=20,
+    n_mean_bin=10,
+    n_var_bin=10,
+    n_length_bin=10,
     n_chunk=20,
     verbose = True,
 ):
@@ -392,6 +400,9 @@ def compute_stats(
         Single-cell data of shape (n_cell, n_gene). Assumed to be log-scale.
     weight_opt : str
         weighting option, same as cli input
+    ctrl_match_key : str, default="mean_var"
+        Gene-level statistic used for matching control and disease genes;
+        should be in `data.uns["SCDRS_PARAM"]["GENE_STATS"]`.
     implicit_cov_corr : bool, default=False
         If True, compute statistics for the implicit corrected data
         `adata.X + COV_MAT * COV_BETA + COV_GENE_MEAN`. Otherwise, compute
@@ -403,6 +414,8 @@ def compute_stats(
         Number of mean-expression bins for matching control genes.
     n_var_bin : int, default=10
         Number of expression-variance bins for matching control genes.
+    n_length_bin : int, default=10
+        Number of gene-length bins for matching control genes.
     n_chunk : int, default=10
         Number of chunks to split the data into when computing mean and variance
         using _get_mean_var_implicit_cov_corr.
@@ -412,14 +425,16 @@ def compute_stats(
     -------
     df_gene : pandas.DataFrame
         Gene-level statistics of shape (n_gene, 7):
-
+        
         - "mean" : mean expression in log scale.
         - "var" : variance expression in log scale.
-        - "var_tech" : technical variance in log scale.
-        - "ct_mean" : mean expression in original non-log scale.
-        - "ct_var" : variance expression in original non-log scale.
-        - "ct_var_tech" : technical variance in original non-log scale.
-        - "mean_var" : n_mean_bin * n_var_bin mean-variance bins
+        - "length" : gene length.
+        - "var_tech" : technical variance in log scale if weight option is vs
+        - "ct_mean" : mean expression in original non-log scale. if weight option is vs
+        - "ct_var" : variance expression in original non-log scale if weight option is vs
+        - "ct_var_tech" : technical variance in original non-log scale if weight option is vs
+        - ctrl_match_key : n_mean_bin * n_var_bin mean-variance bins, noted as mean_bin.var_bin the gene belongs to
+        
     df_cell : pandas.DataFrame
         Cell-level statistics of shape (n_cell, 2):
 
@@ -437,16 +452,30 @@ def compute_stats(
         columns=[
             "mean",
             "var",
+            "length",
             "var_tech",
             "ct_mean",
             "ct_var",
             "ct_var_tech",
-            "mean_var",
+            ctrl_match_key,
         ],
     )
     df_cell = pd.DataFrame(index=adata.obs_names, columns=["mean", "var"])
     
     # Gene-level statistics
+    # put the gene length into the dataframe:
+    conversion = met_scdrs.util.load_homolog_mapping('mouse', 'human')
+    if (df_gene.index.isin(conversion.keys()).sum() > df_gene.index.isin(conversion.values()).sum()):
+        # if mouse gene is being used:
+        gene_info = met_scdrs.util.load_gencode('mouse')
+    else:
+        # if human gene is being used:
+        gene_info = met_scdrs.util.load_gencode('human')
+    
+    # get the gene length 
+    gene_lenth_dict = dict(zip(gene_info['gene_name'], gene_info['gene_length']))
+    df_gene['length'] = df_gene.index.map(gene_lenth_dict)
+    
     if not implicit_cov_corr:
             
         # measure ram usage:
@@ -512,29 +541,38 @@ def compute_stats(
     
     tracker.start()
     
-    # Add n_mean_bin*n_var_bin mean_var bins
-    n_bin_max = np.floor(np.sqrt(adata.shape[1] / 10)).astype(int)
-    if (n_mean_bin > n_bin_max) | (n_var_bin > n_bin_max):
-        n_mean_bin, n_var_bin = n_bin_max, n_bin_max
-        print(
-            "Too few genes for 20*20 bins, setting n_mean_bin=n_var_bin=%d"
-            % (n_bin_max)
-        )
+    ###########################################################################################
+    ######               rework scDRS control gene matching                              ######
+    ###########################################################################################
+    bin_param = {'mean': n_mean_bin, 'var': n_var_bin, 'length': n_length_bin}
+    bin_counts = {k: bin_param[k] for k in ctrl_match_key.split('_') if k in bin_param}
+    
+    # assign bins:
+    df_gene.loc[:, 'tester'] = _assign_gene_to_bins(df_gene, ctrl_match_key, bin_counts)
+    
     v_mean_bin = pd.qcut(df_gene["mean"], n_mean_bin, labels=False, duplicates="drop")
-    df_gene["mean_var"] = ""
+    df_gene[ctrl_match_key] = ""
     for bin_ in sorted(set(v_mean_bin)):
         ind_select = v_mean_bin == bin_
         v_var_bin = pd.qcut(
             df_gene.loc[ind_select, "var"], n_var_bin, labels=False, duplicates="drop"
         )
-        df_gene.loc[ind_select, "mean_var"] = ["%d.%d" % (bin_, x) for x in v_var_bin]
+        df_gene.loc[ind_select, ctrl_match_key] = ["%d.%d" % (bin_, x) for x in v_var_bin]
+    
+    breakpoint()
+    (df_gene.mean_var == df_gene.tester).all() # return all true
     
     peak = tracker.stop()
     print(f'peak memory during bin computation: {peak:.2f} GB') if verbose else None
     
-    ##########################################################
-    ############# ADD GENE LENGTH BIN LATER HERE ############
-    ##########################################################
+    ###########################################################################################
+    ######                                  gene length                                  ######
+    ###########################################################################################
+    # add gene length component:
+    
+    
+    
+    
     
     tracker.start()
     # Cell-level statistics
@@ -555,6 +593,57 @@ def compute_stats(
 ##############################################################################
 ######################## Preprocessing Subroutines ###########################
 ##############################################################################
+def _assign_gene_to_bins(df, ctrl_match_key, bin_counts):
+    """
+    Dynamically use qcut to assign bins to genes:
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        df_gene Dataframe in the preprocess function
+    ctrl_match_key : str
+        axis to match control genes with, must be separated by '_', e.g.: mean_var
+    bin_counts : dictionary
+        dictioary where keys are matchable axis, and value is the number of bins to specify
+        
+    """
+    # assertion:
+    assert set(bin_counts.keys()) == set(ctrl_match_key.split('_')), "bin_counts keys do not match ctrl_match_key"
+    
+    features = ctrl_match_key.split('_')
+    df = df.copy()
+    bin_label_cols = []
+
+    for feature in features:
+        new_bin = pd.Series(pd.NA, index=df.index, dtype="Int64")
+
+        # Iterate through unique combinations of prior bins
+        grouped = df.groupby(bin_label_cols or [lambda x: 0])  # dummy group if first
+
+        for name, subset in grouped:
+            valid = subset[feature].notna()
+            if valid.sum() == 0:
+                continue
+            try:
+                binned = pd.qcut(
+                    subset.loc[valid, feature],
+                    q=bin_counts[feature],
+                    labels=False,
+                    duplicates='drop'
+                ).astype("Int64")
+                new_bin.loc[valid.index] = binned
+            except ValueError:
+                # If not enough values to bin, keep NA
+                pass
+
+        col_name = f"{feature}_bin"
+        df[col_name] = new_bin
+        bin_label_cols.append(col_name)
+
+    # Combine bins into final string label
+    df['bin_label'] = df[bin_label_cols].apply(lambda row: '.'.join(row.dropna().astype(str)), axis=1)
+    return df['bin_label']
+        
 def reg_out(mat_Y, mat_X):
     """Regress mat_X out of mat_Y.
 

@@ -104,8 +104,14 @@ def ctrl_match_bin(preprocessed_h5ad, dict_gs, ctrl_match_key, plot_dir = None):
     
     Output
     ------
-    plots
-
+    plots : png
+        fraction plots at plot_dir if plot_dir is not None
+        the fraction of disease genes and background genes in each bins are visualized
+        plot is used to understand if there is over-sampling at any specific bins
+    inline messages : str
+        if the user did not specify a plot dir, inline messages will be printed
+        for every traits in the dict_gs, print the average number of disease genes in bin
+        plot_dir is highly recommended for diagnostic purposes
     
     """
     # check if the matching key is in the preprocessed h5ad:
@@ -161,3 +167,4 @@ def ctrl_match_bin(preprocessed_h5ad, dict_gs, ctrl_match_key, plot_dir = None):
             plt.tight_layout()
             plt.savefig(plot_path, dpi=300, bbox_inches='tight')
             plt.close()
+
