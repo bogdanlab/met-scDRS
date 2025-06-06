@@ -176,8 +176,8 @@ def compute_score(
                 "unless --h5ad-species==--gs-species"
             )
     # matching control genes should be mean_var:
-    if CTRL_MATCH_OPT not in ["mean_var"]:
-        raise ValueError("--ctrl_match_opt mean_var should be mean_var")
+    if CTRL_MATCH_OPT not in ["mean_var_length", "mean_var", "mean", "var", "mean_length", "var_length"]:
+        raise ValueError("--ctrl_match_opt mean_var should be one of mean_var_length, mean_var, mean, var, mean_length, var_length")
     if WEIGHT_OPT not in ['inv_std', 'vs']:
         raise ValueError("--weight_opt should be inv_std or vs")
     # also check folder:
@@ -255,13 +255,14 @@ def compute_score(
         )
         peak = tracker.stop()
         print(f'peak memory during normalization: {peak:.2f} GB') if VERBOSE else None
-        
+
     # preprocess with covariates
     met_scdrs.preprocess(
         adata,
         cov=df_cov,
-        n_mean_bin=20,
-        n_var_bin=20,
+        n_mean_bin=10,
+        n_var_bin=10,
+        n_length_bin = 10,
         copy=False,
         weight_option=WEIGHT_OPT,
         ctrl_match_key=CTRL_MATCH_OPT,
@@ -272,12 +273,8 @@ def compute_score(
             adata,
             dict_gs = dict_gs,
             ctrl_match_key=CTRL_MATCH_OPT,
-            plot_dir = DIAGNOSTIC_DIR
-        )
-        
-    
+            plot_dir = DIAGNOSTIC_DIR)
     print("")
-    return
     
     ###########################################################################################
     ######                                    Compute score                              ######

@@ -33,15 +33,17 @@ def _bin_formatter(gene_ctrol_match_bin):
     
     Output
     ------
+    axis_num : int
+        number of axis in matching scheme detected
+    average_gene_in_bin : float
+        the average number of genes in a bin
     decompressed : pd.DataFrame
-        if two axis control match (e.g.: mean, and variance), return a heatmap where
-        rows are bins for the first axis, and columns are bins for the second axis
+        if two axis control match (e.g.: mean, and variance), return a wide matrix where
+        rows are bins for the first axis(mean), and columns are bins for the second axis (variance)
         
         if three axis control match (e.g.: mean, variance and gene length), return
-        a four column dataframe.
-        The first three columns corresponds to the bin membership in each of the three axis. 
-        The fourth column (count) represents the number of genes that are in the bin set
-        by the three axis.
+        dictionary where the keys reporesents the bins in the third axis (gene length)
+        the value of the dictionary is the same as two axis control match. i.e. a slice
     """
     # split the gene control bin by binning axis:
     splitted_bins = gene_ctrol_match_bin.str.split('.', expand = True)
@@ -78,7 +80,18 @@ def _bin_formatter(gene_ctrol_match_bin):
         grouped_bins = grouped.size().reset_index(name = 'count')
         average_gene_in_bin = grouped_bins['count'].sum() / len(grouped_bins)
         print(f'average genes in bin {average_gene_in_bin}')
-        decompressed = average_gene_in_bin
+        
+        # initiate:
+        decompressed = {}
+        
+        # for each of the level in the last axis, create binary matrix:
+        for last_axis_bin in grouped_bins['bin_axis2']:
+            decompressed[f'length_bin_{last_axis_bin}'] = grouped_bins[grouped_bins.bin_axis2 == last_axis_bin].pivot_table(
+                columns = 'bin_axis1',
+                index = 'bin_axis0',
+                values = 'count',
+                fill_value = 0
+            )
         return axis_num, average_gene_in_bin, decompressed
     
     else:
@@ -155,16 +168,44 @@ def ctrl_match_bin(preprocessed_h5ad, dict_gs, ctrl_match_key, plot_dir = None):
                 print('')
                 
         if axis_num == 3:
-            print('do something else')
-            plt.figure(figsize=(8, 6))
-            g = sns.FacetGrid(grouped_bins, col='bin_axis2', col_wrap=5, height=4)
-            g.map_dataframe(
-                lambda data, color: sns.heatmap(
-                    data.pivot(index='bin_axis0', columns='bin_axis1', values='count').fillna(0),
-                    annot=True, fmt='g', cmap='viridis', cbar=False
-                )
-            )
-            plt.tight_layout()
-            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-            plt.close()
-
+            n_plots = len(disease_bin_decompressed)
+            plots_per_row = 4
+            nrows = (n_plots + plots_per_row - 1) // plots_per_row
+            
+            # initiate figure:
+            fig, axes = plt.subplots(nrows, plots_per_row, figsize=(4 * plots_per_row, 3 * nrows))
+            axes = axes.flatten()
+            
+            for plot_i, (gene_length_bin, wide_matrix) in enumerate(disease_bin_decompressed.items()):
+                # get the background slice:
+                background_slice = bin_decompressed[gene_length_bin]
+                background_slice.index = background_slice.index.astype(int)
+                background_slice.columns = background_slice.columns.astype(int)
+                
+                # compute the fraction gene between foreground and background:
+                wide_matrix.index = wide_matrix.index.astype(int)
+                wide_matrix.columns = wide_matrix.columns.astype(int)
+                wide_matrix = wide_matrix.reindex(index = range(background_slice.shape[0]), columns = range(background_slice.shape[1]), fill_value=0)
+                fg_bg_ratio = wide_matrix.divide(background_slice) * 100
+                
+                # make the heatmap
+                sns.heatmap(fg_bg_ratio, ax = axes[plot_i], annot=True, fmt='.0f', annot_kws = {'size': 8}, cmap='Reds', cbar=True, vmin= 0, vmax = 100, linewidths = 0.5, linecolor = 'lightgray', cbar_kws={'label': '% fg/bg'})
+                axes[plot_i].set_ylabel("Mean bins")
+                axes[plot_i].set_xlabel("Var bins")
+                axes[plot_i].set_title(f'{gene_length_bin}')
+            
+            # Delete unused axes if any
+            for j in range(n_plots, len(axes)):
+                fig.delaxes(axes[j])
+            
+            if plot_dir:
+                plot_path = os.path.join(plot_dir, f'{disease}_foreground_background_percentage_across_length_bins.png')
+                plt.subplots_adjust(hspace=0.4, wspace=0.3)
+                plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+                plt.close()
+            else:
+                print('')
+                print(f'processing diseases {disease}')
+                print(f'{axis_num} way binning detected, average disease gene in bin: {average_gene_in_bin}')
+                print(f'recommend setting plot_dir to obtain getting fraction plot if diagnostic is important')
+                print('')

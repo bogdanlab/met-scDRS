@@ -319,7 +319,7 @@ def _select_ctrl_geneset(
                 dic_ctrl_weight[i_list].extend(
                     [dic_gene_weight[x] for x in bin_disease_gene]
                 )
-
+    
     return dic_ctrl_list, dic_ctrl_weight
 
 

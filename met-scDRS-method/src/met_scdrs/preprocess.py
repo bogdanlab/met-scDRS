@@ -163,8 +163,9 @@ def preprocess(
     weight_option,
     ctrl_match_key,
     cov=None,
-    n_mean_bin=20,
-    n_var_bin=20,
+    n_mean_bin=10,
+    n_var_bin=10,
+    n_length_bin=10,
     n_chunk=None,
     copy=False,
     verbose = True,
@@ -206,10 +207,12 @@ def preprocess(
     cov : pandas.DataFrame, default=None
         Covariates of shape (n_cell, n_cov). Should contain
         a constant term and have values for at least 75% cells.
-    n_mean_bin : int, default=20
+    n_mean_bin : int, default=10
         Number of mean-expression bins for matching control genes.
-    n_var_bin : int, default=20
+    n_var_bin : int, default=10
         Number of expression-variance bins for matching control genes.
+    n_length_bin : int, default = 10
+        Number of gene length bins for matching control genes.
     n_chunk : int, default=None
         Number of chunks to split the data into when computing mean and variance
         using _get_mean_var_implicit_cov_corr. If n_chunk is None, set to 5/sparsity.
@@ -362,12 +365,20 @@ def preprocess(
         cell_weight=cell_weight,
         n_mean_bin=n_mean_bin,
         n_var_bin=n_var_bin,
+        n_length_bin=n_length_bin,
         n_chunk=n_chunk,
         verbose = verbose
     )
 
     adata.uns["SCDRS_PARAM"]["GENE_STATS"] = df_gene
     adata.uns["SCDRS_PARAM"]["CELL_STATS"] = df_cell
+    
+    # filter to the same set of genes that supports binning:
+    gene_mask = adata.var.index.isin(adata.uns['SCDRS_PARAM']['GENE_STATS'].index)
+    print(f"Retaining {np.sum(gene_mask)} / {len(adata.var)} genes")
+    adata._inplace_subset_var(gene_mask)
+    
+    # verbose to print memory usage:
     peak=tracker.stop()
     print(f'peak memory after regression: {peak:.2f} GB') if verbose else None
     return adata if copy else None
@@ -477,7 +488,6 @@ def compute_stats(
     df_gene['length'] = df_gene.index.map(gene_lenth_dict)
     
     if not implicit_cov_corr:
-            
         # measure ram usage:
         tracker = met_scdrs.util.MemoryTracker()
         tracker.start()
@@ -547,32 +557,17 @@ def compute_stats(
     bin_param = {'mean': n_mean_bin, 'var': n_var_bin, 'length': n_length_bin}
     bin_counts = {k: bin_param[k] for k in ctrl_match_key.split('_') if k in bin_param}
     
-    # assign bins:
-    df_gene.loc[:, 'tester'] = _assign_gene_to_bins(df_gene, ctrl_match_key, bin_counts)
+    # if require matching by length, remove the genes that we cnanot find length info
+    if 'length' in bin_counts.keys():
+        print(f"{df_gene['length'].isna().sum()} genes are removed because no length available")
+        df_gene = df_gene.loc[df_gene['length'].notna(), :]
     
-    v_mean_bin = pd.qcut(df_gene["mean"], n_mean_bin, labels=False, duplicates="drop")
-    df_gene[ctrl_match_key] = ""
-    for bin_ in sorted(set(v_mean_bin)):
-        ind_select = v_mean_bin == bin_
-        v_var_bin = pd.qcut(
-            df_gene.loc[ind_select, "var"], n_var_bin, labels=False, duplicates="drop"
-        )
-        df_gene.loc[ind_select, ctrl_match_key] = ["%d.%d" % (bin_, x) for x in v_var_bin]
+    # assign gene to bins:
+    df_gene.loc[:, ctrl_match_key] = _assign_gene_to_bins(df_gene, ctrl_match_key, bin_counts)
     
-    breakpoint()
-    (df_gene.mean_var == df_gene.tester).all() # return all true
-    
+    # print message on memory trace:
     peak = tracker.stop()
     print(f'peak memory during bin computation: {peak:.2f} GB') if verbose else None
-    
-    ###########################################################################################
-    ######                                  gene length                                  ######
-    ###########################################################################################
-    # add gene length component:
-    
-    
-    
-    
     
     tracker.start()
     # Cell-level statistics
