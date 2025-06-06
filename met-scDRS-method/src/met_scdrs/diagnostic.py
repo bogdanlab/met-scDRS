@@ -22,6 +22,9 @@ import time
 import re
 matplotlib.use('Agg')
 
+from datetime import date
+today = date.today()
+
 def _bin_formatter(gene_ctrol_match_bin):
     """
     Subroutine under ctrl_match_bin that reforats that decondense bins
@@ -209,3 +212,58 @@ def ctrl_match_bin(preprocessed_h5ad, dict_gs, ctrl_match_key, plot_dir = None):
                 print(f'{axis_num} way binning detected, average disease gene in bin: {average_gene_in_bin}')
                 print(f'recommend setting plot_dir to obtain getting fraction plot if diagnostic is important')
                 print('')
+
+def compare_score(score1, score2, plot_path, add_date = True):
+    """
+    Compare between two met_scdrs disease scores
+    
+    Parameters
+    ----------
+    score1 : str
+        path to first set of disease score file, should end with .score.gz
+    score2 : str
+        path to second set of disease score file, should end with .score.gz
+    plot_path : str
+        path to plot scatter plot, default to None
+    add_date : bool
+        if date should be added after the directory, default to True
+    """
+    # assertions:
+    assert len(score1) == len(score2), "score 1 and score 2 is not the same length"
+    assert score1.index.isin(score2.index).all(), "some cells in score 1 not in score 2"
+    score1 = score1.loc[score2.index, :]
+    
+    # compare spearman correlation between normalized scores:
+    cor_df = pd.DataFrame({'pval_score1' : score1.pval, 'pval_score2' : score2.pval})
+    cor_coef = cor_df.corr(method = 'spearman').iloc[0, 1]
+    print(f'spearman correlation between pvalues = {cor_coef:.2f}')
+    
+    # compare spearman correlation between normalized scores:
+    cor_df = pd.DataFrame({'normalized_score1' : score1.norm_score, 'normalized_score2' : score2.norm_score})
+    cor_coef = cor_df.corr(method = 'spearman').iloc[0, 1]
+    print(f'spearman correlation between scores = {cor_coef:.2f}')
+    
+    if plot_path:
+        # if we would like to add a date to the basename:
+        if add_date:
+            plot_dir = os.path.dirname(plot_path)
+            basename = os.path.basename(plot_path)
+            plot_path = os.path.join(plot_dir, f"{today}_{basename}")
+        
+        # create a scatter plot:
+        plt.figure(figsize=(4, 4))
+        sns.scatterplot(data = cor_df, x = 'normalized_score1', y = 'normalized_score2')
+        abline(cor_df.normalized_score1, cor_df.normalized_score2)
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+def abline(x, y, **kwargs):
+    """
+    add a line with X=Y
+    x : the vector used as x for scatterplot
+    y : the vector used as y for scatterplot
+    """
+    limit_min = min(np.min(x), np.min(y))
+    limit_max = max(np.max(x), np.max(y))
+    lims = [limit_min, limit_max]
+    plt.plot(lims, lims, '--', color = 'black', **kwargs)

@@ -19,3 +19,7 @@ met_scdrs compute_score \
 
 # compare to /u/project/geschwind/lixinzhe/scDRS-output/GSE132489/mch/met-scDRS-v1-run/LXZ-74-traits/ results
 
+met_scdrs compare_score \
+    --score1_path /u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/recreate/gse132489_subset_v1/PASS_Alzheimers_Jansen2019.score.gz \
+    --score2_path /u/project/geschwind/lixinzhe/scDRS-output/GSE132489/mch/met-scDRS-v1-run/LXZ-74-traits/PASS_Alzheimers_Jansen2019.score.gz \
+    --plot_path /u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/alzheimer_comparison_package_vs_preprint.png

@@ -339,6 +339,32 @@ def compute_score(
         )
     return
 
+def compare_score(
+    score1_path : str,
+    score2_path : str,
+    plot_path : str = None,
+):
+    """
+    score1_path : str
+        path to first set of disease score file, should end with .score.gz
+    score2_path : str
+        path to second set of disease score file, should end with .score.gz
+    plot_path : str
+        path to plotting a scatter plot between the two scores, default to None
+    """
+    # print a header so people know the input:
+    header = get_cli_head()
+    header += 'Called compare_score \\\n'
+    header += "--score1_path %s \\\n" % score1_path
+    header += "--score2_path %s \\\n" % score2_path
+    header += "--plot_path %s \n" %plot_path
+    print(header)
+    
+    # call plotting script:
+    score1 = pd.read_csv(score1_path, sep = '\t', index_col = 0)
+    score2 = pd.read_csv(score2_path, sep = '\t', index_col = 0)
+    met_scdrs.diagnostic.compare_score(score1, score2, plot_path)
+
 
 def quote_from_cyberpunk2077():
     # meant for testing script
