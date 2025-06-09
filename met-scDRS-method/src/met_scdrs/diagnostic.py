@@ -20,6 +20,10 @@ import psutil
 import threading
 import time
 import re
+import itertools
+from tqdm import tqdm
+from joblib import Parallel, delayed
+
 matplotlib.use('Agg')
 
 from datetime import date
@@ -257,6 +261,37 @@ def compare_score(score1, score2, plot_path, add_date = True):
         plt.savefig(plot_path, dpi=300, bbox_inches='tight')
         plt.close()
 
+# define helper:
+def _compute_pair(i, j, score_array):
+    w_dist = sp.stats.wasserstein_distance(score_array[i], score_array[j])
+    return i, j, w_dist
+
+def plot_bg_distribution(score, plot_path):
+    """
+    visualize background distribution as a distribution 
+    
+    Parameters
+    ----------
+    score : pd.DataFrame 
+        a dataframe of full score, if both raw score and control score is present, we plot out both distributions.
+    plot_path : str
+        a file path where the plot will be outputted to. 
+    """
+    # get the columns that are control row score and control norma score
+    control_norm_score_columns = score.columns.str.contains('ctrl_norm_score')
+    control_raw_score_columns = score.columns.str.contains('ctrl_raw_score')
+    
+    # if the control norm score is present:
+    if control_norm_score_columns.sum() > 0:
+        # build a nested for loop for all cell pairwise distance:
+        looper = list(itertools.combinations(range(len(score)), 2))
+        looper_length = len(looper)
+        
+        # optimized for memory:
+        score_array = score.loc[:, control_norm_score_columns].values
+        results = Parallel(n_jobs = -1, require = 'sharedmem')(delayed(_compute_pair)(arg1, arg2, score_array) for arg1, arg2 in tqdm(looper, total = looper_length))
+        breakpoint()
+    
 def abline(x, y, **kwargs):
     """
     add a line with X=Y

@@ -393,6 +393,50 @@ def compare_score(
     else:
         print('please check input, if score1, score2, and plot_path can either be all directories, or file paths')
 
+def probe_background(
+    score : str,
+    plot_path : str
+    ):
+    """
+    investigate the background distribution to see how sampled control scores are distributed
+    
+    Parameters:
+    -----------
+    score : str
+        path to the score, can either be a directory, or it can be a score file ends with .full_score.gz
+    plot_path : str
+        path to the plot, can be eitehr a director or a file to plot into
+    """
+    
+    # make sure that the score input is a real path or a directory
+    assert (os.path.isfile(score) or os.path.isdir(score)), "score needs to be either a file or a directory"
+    
+    if os.path.isdir(score) and os.path.isdir(plot_path):
+        # grab out the full score files:
+        score_files = [file for file in os.listdir(score) if file.endswith('full_score.gz')]
+        
+        # for each of these files, do:
+        for file in score_files:
+            # get disease:
+            disease = re.sub('.full_score.gz', '', file)
+            # get the score inside:
+            score_path = os.path.join(score, file)
+            full_score_ = pd.read_csv(score_path, sep = '\t', index_col = 0)
+            
+            # get the plot path:
+            plot_path_ = os.path.join(plot_path, disease)
+            plot_path_ = f"{plot_path_}_background_distribution_violin.png"
+            
+            # call plot_bg_distribution
+            met_scdrs.diagnostic.plot_bg_distribution(full_score_, plot_path_)
+    
+    elif os.path.isfile(score):
+        # directly call the met_scdrs plot bg distribution
+        print('something')
+    else:
+        print('please check input, score and plot_path can either be all directories, or all file paths')
+
+
 def quote_from_cyberpunk2077():
     # meant for testing script
     print('To This!')

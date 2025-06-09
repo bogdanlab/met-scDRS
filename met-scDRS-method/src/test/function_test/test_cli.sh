@@ -11,7 +11,7 @@ met_scdrs compute_score \
     --ctrl_match_opt mean_var_length \
     --weight_opt inv_std \
     --n_ctrl 1000 \
-    --flag_return_ctrl_raw_score False \
+    --flag_return_ctrl_raw_score True \
     --flag_return_ctrl_norm_score True \
     --diagnostic True \
     --verbose True
@@ -91,3 +91,11 @@ for gs_file in ${input_gs_dir}KC_75_traits_split.gs*; do
     sleep 1
 
 done
+
+###########################################################################################
+######                               distribution check                              ######
+###########################################################################################
+met_scdrs probe_background \
+    --score /u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/diagnostic/ \
+    --plot_path /u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/diagnostic/distribution_comparison/
+    
