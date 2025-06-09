@@ -1,5 +1,5 @@
 # call scDRS:
-submission_script="/u/home/l/lixinzhe/project-github/met-scDRS/GSE132489-scDRS/v1.1-rc-subset/v1.1.0_met_scDRS_subset_run_submission.sh"
+submission_script="/u/home/l/lixinzhe/project-github/met-scDRS/GSE132489-scDRS/v1.1-rc-subset/runs/v1.1.0_met_scDRS_subset_run_submission.sh"
 
 # split data:
 input_gs_dir="/u/home/l/lixinzhe/project-geschwind/port/scratch/parallel_gs/"

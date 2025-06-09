@@ -10,6 +10,7 @@ from typing import Dict, List
 import scanpy as sc
 import os
 import time
+import re
 
 ### HEADER ########################################################################################
 def get_cli_head():
@@ -340,31 +341,57 @@ def compute_score(
     return
 
 def compare_score(
-    score1_path : str,
-    score2_path : str,
+    score1 : str,
+    score2 : str,
     plot_path : str = None,
 ):
     """
-    score1_path : str
-        path to first set of disease score file, should end with .score.gz
-    score2_path : str
-        path to second set of disease score file, should end with .score.gz
+    score1 : str
+        path to first set of disease score file, either a directory, or a score file ends with .score.gz
+    score2 : str
+        path to second set of disease score file, either a directory, or a score file ends with .score.gz
     plot_path : str
         path to plotting a scatter plot between the two scores, default to None
     """
     # print a header so people know the input:
     header = get_cli_head()
     header += 'Called compare_score \\\n'
-    header += "--score1_path %s \\\n" % score1_path
-    header += "--score2_path %s \\\n" % score2_path
+    header += "--score1_path %s \\\n" % score1
+    header += "--score2_path %s \\\n" % score2
     header += "--plot_path %s \n" %plot_path
     print(header)
     
-    # call plotting script:
-    score1 = pd.read_csv(score1_path, sep = '\t', index_col = 0)
-    score2 = pd.read_csv(score2_path, sep = '\t', index_col = 0)
-    met_scdrs.diagnostic.compare_score(score1, score2, plot_path)
-
+    # check if the file is directory or file path:
+    if os.path.isdir(score1) and os.path.isdir(score2) and os.path.isdir(plot_path):
+        # read in the files:
+        score1_files = os.listdir(score1)
+        score2_files = os.listdir(score2)
+        
+        # identify the score files:
+        score1_files = [score_file for score_file in score1_files if score_file.endswith('.score.gz')]
+        score2_files = [score_file for score_file in score2_files if score_file.endswith('.score.gz')]
+        common_files = set(score1_files).intersection(score2_files)
+        
+        # for each file in the common files, make comparisons:
+        for f in common_files:
+            disease = re.sub('.score.gz', '', f)
+            score1_ = os.path.join(score1, f)
+            score2_ = os.path.join(score2, f)
+            score1_ = pd.read_csv(score1_, sep = '\t', index_col = 0)
+            score2_ = pd.read_csv(score2_, sep = '\t', index_col = 0)
+            plot_path_ = f"{os.path.join(plot_path, disease)}_comparison.png"
+            
+            # call the comparison:
+            met_scdrs.diagnostic.compare_score(score1_, score2_, plot_path_, add_date = True)
+    
+    elif os.path.isfile(score1) and os.path.isfile(score2) and os.path.isfile(plot_path):
+        # call plotting script:
+        score1 = pd.read_csv(score1, sep = '\t', index_col = 0)
+        score2 = pd.read_csv(score2, sep = '\t', index_col = 0)
+        met_scdrs.diagnostic.compare_score(score1, score2, plot_path, add_date = True)
+    
+    else:
+        print('please check input, if score1, score2, and plot_path can either be all directories, or file paths')
 
 def quote_from_cyberpunk2077():
     # meant for testing script
