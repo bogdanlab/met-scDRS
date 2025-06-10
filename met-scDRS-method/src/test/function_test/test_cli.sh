@@ -97,5 +97,8 @@ done
 ###########################################################################################
 met_scdrs probe_background \
     --score /u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/diagnostic/ \
-    --plot_path /u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/diagnostic/distribution_comparison/
-    
+    --plot_path /u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_10K/ \
+    --sampling 5 \
+    --cell_meta_path /u/home/l/lixinzhe/project-geschwind/data/Liu_et_al_2021_methylation_gse132489/simulation-10K-subset-GSE132489-meta.tsv \
+    --group_column MajorType \
+    --seed 103

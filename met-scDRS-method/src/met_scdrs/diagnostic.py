@@ -261,37 +261,6 @@ def compare_score(score1, score2, plot_path, add_date = True):
         plt.savefig(plot_path, dpi=300, bbox_inches='tight')
         plt.close()
 
-# define helper:
-def _compute_pair(i, j, score_array):
-    w_dist = sp.stats.wasserstein_distance(score_array[i], score_array[j])
-    return i, j, w_dist
-
-def plot_bg_distribution(score, plot_path):
-    """
-    visualize background distribution as a distribution 
-    
-    Parameters
-    ----------
-    score : pd.DataFrame 
-        a dataframe of full score, if both raw score and control score is present, we plot out both distributions.
-    plot_path : str
-        a file path where the plot will be outputted to. 
-    """
-    # get the columns that are control row score and control norma score
-    control_norm_score_columns = score.columns.str.contains('ctrl_norm_score')
-    control_raw_score_columns = score.columns.str.contains('ctrl_raw_score')
-    
-    # if the control norm score is present:
-    if control_norm_score_columns.sum() > 0:
-        # build a nested for loop for all cell pairwise distance:
-        looper = list(itertools.combinations(range(len(score)), 2))
-        looper_length = len(looper)
-        
-        # optimized for memory:
-        score_array = score.loc[:, control_norm_score_columns].values
-        results = Parallel(n_jobs = -1, require = 'sharedmem')(delayed(_compute_pair)(arg1, arg2, score_array) for arg1, arg2 in tqdm(looper, total = looper_length))
-        breakpoint()
-    
 def abline(x, y, **kwargs):
     """
     add a line with X=Y
@@ -302,3 +271,183 @@ def abline(x, y, **kwargs):
     limit_max = max(np.max(x), np.max(y))
     lims = [limit_min, limit_max]
     plt.plot(lims, lims, '--', color = 'black', **kwargs)
+
+# define helper:
+def _compute_pair(i, j, score_array):
+    w_dist = sp.stats.wasserstein_distance(score_array[i], score_array[j])
+    return i, j, w_dist
+
+def _plot_calibration(observed, theoretical, plot_path, **kwargs):
+    # sort the observed and theoretical pvals:
+    sort_observe = np.sort(observed)
+    sort_theoretical = np.sort(theoretical)
+    
+    # make figure;
+    plt.figure(figsize=(6, 6))
+    plt.plot(-np.log10(sort_theoretical), -np.log10(sort_observe), 'o', markersize=2)
+    plt.plot([0, -np.log10(min(sort_theoretical[0], sort_observe[0]))],
+            [0, -np.log10(min(sort_theoretical[0], sort_observe[0]))],
+            'r--', label='Expected = Observed')
+    
+    plt.xlabel('Expected -log10(p) (sampled)')
+    plt.ylabel('Observed -log10(p)')
+    plt.title(f'QQ Plot of P-values (Sampled Null) {kwargs.get("title")}')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+def plot_bg_distribution(score, plot_path, sampling = 100, cell_group = None, seed = 103):
+    """
+    visualize background distribution as a distribution 
+    
+    Parameters
+    ----------
+    score : pd.DataFrame 
+        a dataframe of full score, if both raw score and control score is present, we plot out both distributions.
+    plot_path : str
+        a file path where the plot will be outputted to.
+    sampling : int
+        number of cells to sample from the whole dataframe
+    cell_group : pd.Series
+        a n_cell by 1 pandas series that documents the cell group identity, default is None
+        if the cell_group is provided, sampling is done within each group
+    seed : int
+        the sampling random seed
+    
+    Outputs
+    -------
+    graph1 : a plot of flattened pairwise wesserstein distance distribution between sampled cells
+    graph2 : if the cell group is provided, visualize the distribution within group and between group
+    graph3 : if sampling is < 10, also plot out the actual contrl norm and raw score for each cell  
+    """
+    # get the columns that are control row score and control norma score
+    control_norm_score_columns = score.columns.str.contains('ctrl_norm_score')
+    control_raw_score_columns = score.columns.str.contains('ctrl_raw_score')
+    np.random.seed(seed)
+    
+    # first we will do sampling based on if the cell group is provided or not:
+    if cell_group is not None:
+        # assert the cell group is the same order as the score
+        assert (cell_group.index == score.index).all()
+        sampled_cells = []
+        # sample from every group
+        for group in cell_group.unique():
+            group_index = cell_group.index[cell_group == group]
+            
+            # explicitly check if the group have enough to be sampled:
+            if len(group_index) < sampling:
+                print(f'{group} has less samples than specified sampling instance, sampling all cells in the group instead')
+                sampled_in_group = np.random.choice(group_index, size = len(group_index), replace = False)
+            else:
+                sampled_in_group = np.random.choice(group_index, size = sampling, replace = False)
+            sampled_cells.append(sampled_in_group)
+        
+        # flatten the sampledcells:
+        sampled_cells = np.concatenate(sampled_cells)
+    else:
+        sampled_cells = np.random.choice(score.index, size = sampling, replace = False)
+    
+    ###########################################################################################
+    ######                            H0: same in shape                                  ######
+    ###########################################################################################
+    # normalize to zscores:
+    if control_raw_score_columns.sum() > 0 and control_norm_score_columns.sum() > 0:
+        control_raw_score = score.loc[:, control_raw_score_columns]
+        normalized_raw_score = score.loc[:, control_norm_score_columns]
+        zscored = scipy.stats.zscore(control_raw_score, axis = 1)
+        
+        # set the mean cell as a reference for both the raw and raw score
+        pvals = []
+        norm_pvals = []
+        reference = zscored.iloc[0, :]
+        norm_ref = normalized_raw_score.iloc[0, :]
+        wasserstein_distance = []
+        
+        for i in tqdm(range(1, len(zscored))):
+            stat, pval = scipy.stats.ks_2samp(reference, zscored.iloc[i, :])
+            pvals.append(pval)
+            stat, pval = scipy.stats.ks_2samp(norm_ref, zscored.iloc[i, :])
+            norm_pvals.append(pval)
+            wasserstein_distance.append(sp.stats.wasserstein_distance(control_raw_score.iloc[1, :], control_raw_score.iloc[i, :]))
+        
+        # sort the observed p value
+        observed_pval = np.array(pvals)
+        sorted_norm_p = np.sort(np.array(norm_pvals))
+        sorted_pvals = np.sort(observed_pval)
+        
+        # draw and sort p value from U(0,1)
+        theoretical_p = np.sort(np.random.uniform(0, 1, size = len(sorted_pvals)))
+        
+        # QQ plot (log scale)
+        if plot_path:
+            # plot qq plot:
+            plot_path_raw = re.sub('.png', '_raw.png', plot_path)
+            plot_path_norm = re.sub('.png', '_norm.png', plot_path)
+            _plot_calibration(observed_pval, theoretical_p, plot_path_raw, title = 'raw')
+            _plot_calibration(norm_pvals, theoretical_p, plot_path_norm, title = 'normalized')
+            
+            # plot density:
+            plot_path_density = re.sub('.png', '_wasserstein_distance_density.png', plot_path)
+            sns.kdeplot(wasserstein_distance, fill = True)
+            plt.ylabel("density")
+            plt.xlabel("control raw score wasserstein distance")
+            plt.savefig(plot_path_density, dpi=300, bbox_inches='tight')
+            plt.close()
+        
+        ###########################################################################################
+        ######                       plot sampled control score                              ######
+        ###########################################################################################
+        # also directly visualize 10 of the distributions:
+        n_plots = len(sampled_cells)
+        if n_plots > 25:
+            plots_per_row = 15
+        else:
+            plots_per_row = 5
+        nrows = (n_plots + plots_per_row - 1) // plots_per_row
+        
+        # initiate figure:
+        fig, axes = plt.subplots(nrows, plots_per_row, figsize=(4 * plots_per_row, 3 * nrows))
+        axes = axes.flatten()
+        
+        if plot_path:
+            plot_path_raw = re.sub('.png', '_raw_sampling.png', plot_path)
+            
+            # for sampled cells, plot the density of the control distribution in the sampling:
+            for plot_i, sampled_cell in enumerate(sampled_cells):
+                cell_type = cell_group.loc[sampled_cell, ]
+                values = control_raw_score.loc[sampled_cell, :].values
+                sns.kdeplot(values, fill = True, ax = axes[plot_i])
+                axes[plot_i].set_ylabel("density")
+                axes[plot_i].set_xlabel("control raw score")
+                axes[plot_i].set_title(f"{sampled_cell}\n{cell_type}")
+            
+            for ax in axes[n_plots:]:
+                ax.set_visible(False)
+            plt.subplots_adjust(hspace=0.8, wspace=0.3)
+            plt.savefig(plot_path_raw, dpi=300, bbox_inches='tight')
+            plt.close()
+        
+        # do the same for the normalized control scores:
+        fig, axes = plt.subplots(nrows, plots_per_row, figsize=(4 * plots_per_row, 3 * nrows))
+        axes = axes.flatten()
+        
+        if plot_path:
+            plot_path_norm = re.sub('.png', '_norm_sampling.png', plot_path)
+            
+            # for sampled cells, plot the density of the control distribution:
+            for plot_i, sampled_cell in enumerate(sampled_cells):
+                values = normalized_raw_score.loc[sampled_cell, :].values
+                sns.kdeplot(values, fill = True, ax = axes[plot_i])
+                axes[plot_i].set_ylabel("density")
+                axes[plot_i].set_xlabel("control raw score")
+                axes[plot_i].set_title(f"{sampled_cell}\n{cell_type}")
+            
+            for ax in axes[n_plots:]:
+                ax.set_visible(False)
+            plt.subplots_adjust(hspace=0.8, wspace=0.3)
+            plt.savefig(plot_path_norm, dpi=300, bbox_inches='tight')
+            plt.close()
+    else:
+        print('make sure --flag_return_ctrl_raw_score and --flag_return_ctrl_norm_score is true')

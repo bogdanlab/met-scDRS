@@ -395,7 +395,11 @@ def compare_score(
 
 def probe_background(
     score : str,
-    plot_path : str
+    plot_path : str,
+    sampling : int,
+    cell_meta_path : str = None,
+    group_column : str = None,
+    seed : int = 103
     ):
     """
     investigate the background distribution to see how sampled control scores are distributed
@@ -406,14 +410,39 @@ def probe_background(
         path to the score, can either be a directory, or it can be a score file ends with .full_score.gz
     plot_path : str
         path to the plot, can be eitehr a director or a file to plot into
+    sampling : int, optional
+        if cell_meta and group column provided, sampled in each level, highly recommend to keep it < 30
+        if not provided, sampled globally, recommend 100 - 1000 range
+        recommendation is made to keep the compute time managable
+    cell_group_path : str, optional
+        cell meta data path where rows are cells, columns are annotation of cells, default to None
+    group_column : str, optional
+        group structure of cells to sample background distribution. example: if group_column='cell_type'
+        the sampling will be done in each cell type, and it will provide distribution comparison between
+        and within cell types, default to None
+    seed : int, optional
+        numpy sampling seed passed into the sampler, default is 103
     """
+    
+    # set the cell meta data:
+    if cell_meta_path:
+        # load in the file:
+        cell_meta = pd.read_csv(cell_meta_path, index_col = 0, sep = '\t')
+        
+        # if the cell group is provided, subset to the pd.Series
+        if group_column:
+            cell_group = cell_meta.loc[:, group_column]
+        else:
+            raise AssertionError("please provide cell group column")
+    else:
+        cell_group = None
     
     # make sure that the score input is a real path or a directory
     assert (os.path.isfile(score) or os.path.isdir(score)), "score needs to be either a file or a directory"
-    
     if os.path.isdir(score) and os.path.isdir(plot_path):
         # grab out the full score files:
         score_files = [file for file in os.listdir(score) if file.endswith('full_score.gz')]
+        assert len(score_files) > 0, "there is no full score files, is --flag_return_ctrl_norm_score set to True?"
         
         # for each of these files, do:
         for file in score_files:
@@ -422,17 +451,19 @@ def probe_background(
             # get the score inside:
             score_path = os.path.join(score, file)
             full_score_ = pd.read_csv(score_path, sep = '\t', index_col = 0)
-            
+                        
             # get the plot path:
             plot_path_ = os.path.join(plot_path, disease)
-            plot_path_ = f"{plot_path_}_background_distribution_violin.png"
+            plot_path_ = f"{plot_path_}_calibration_p.png"
             
             # call plot_bg_distribution
-            met_scdrs.diagnostic.plot_bg_distribution(full_score_, plot_path_)
+            met_scdrs.diagnostic.plot_bg_distribution(full_score_, plot_path_, sampling = sampling, cell_group = cell_group)
     
     elif os.path.isfile(score):
         # directly call the met_scdrs plot bg distribution
-        print('something')
+        full_score_ = pd.read_csv(score, sep = '\t', index_col = 0)
+        met_scdrs.diagnostic.plot_bg_distribution(full_score_, plot_path_, sampling = sampling, cell_group = cell_group)
+        
     else:
         print('please check input, score and plot_path can either be all directories, or all file paths')
 
