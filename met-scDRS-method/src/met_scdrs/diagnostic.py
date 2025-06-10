@@ -272,11 +272,6 @@ def abline(x, y, **kwargs):
     lims = [limit_min, limit_max]
     plt.plot(lims, lims, '--', color = 'black', **kwargs)
 
-# define helper:
-def _compute_pair(i, j, score_array):
-    w_dist = sp.stats.wasserstein_distance(score_array[i], score_array[j])
-    return i, j, w_dist
-
 def _plot_calibration(observed, theoretical, plot_path, **kwargs):
     # sort the observed and theoretical pvals:
     sort_observe = np.sort(observed)
@@ -350,7 +345,7 @@ def plot_bg_distribution(score, plot_path, sampling = 100, cell_group = None, se
         sampled_cells = np.random.choice(score.index, size = sampling, replace = False)
     
     ###########################################################################################
-    ######                            H0: same in shape                                  ######
+    ######                            H0: similar distribution                           ######
     ###########################################################################################
     # normalize to zscores:
     if control_raw_score_columns.sum() > 0 and control_norm_score_columns.sum() > 0:
