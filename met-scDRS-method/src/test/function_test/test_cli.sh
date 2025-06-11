@@ -34,6 +34,18 @@ met_scdrs compute_score \
     --diagnostic_dir /u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/diagnostic/ \
     --verbose True
 
+###########################################################################################
+######                                    Diagnostics                              ######
+###########################################################################################
+met_scdrs compare_score \
+    --score1 "/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/ges132489_30K_subset/mean_var/" \
+    --score2 "/u/project/geschwind/lixinzhe/scDRS-output/GSE132489/mch/met-scDRS-v1-run/LXZ-74-traits/" \
+    --plot_path "/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_30K_comparison"
+
+met_scdrs compare_score \
+    --score1 "/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/ges132489_30K_subset/mean_var/" \
+    --score2 "/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/ges132489_30K_subset/mean_var_length/" \
+    --plot_path "/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_30K_comparison/mean_var_vs_mean_var_length/"
 
 ###########################################################################################
 ######                                    parallel                                   ######
