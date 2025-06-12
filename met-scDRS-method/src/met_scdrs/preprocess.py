@@ -39,7 +39,7 @@ def normalize(
     transformation : str, optional
         "logit" : logit transformation
         "arcsine" : arcsine transformation
-        "log_library" : inverse the fraction then library normalize
+        "library" : inverse the fraction then library normalize
         if None, no transformation is applied
     variance_clip : int
         only genes with greater than specified percentile will be retained

@@ -62,7 +62,7 @@ def compute_score(
     transformation : str, optional
         "logit" : logit transformation
         "arcsine" : arcsine transformation
-        "log_library" : inverse the fraction then library normalize
+        "library" : inverse the fraction then library normalize
         if None, no transformation is applied
     h5ad_species : str
         Species of the cells in the `h5ad_file`. Supports automatic gene name translation 
