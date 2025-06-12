@@ -51,7 +51,7 @@ def normalize(
     initial_time = time.time()
     header = "--preprocess_method %s \\\n" % method
     header += "--variance_clip %s \\\n" % variance_clip
-    header += "--transformation %s \\\n" % transforamtion
+    header += "--transformation %s \\\n" % transformation
     print(header)
     
     # obtain the memory usage:
@@ -163,7 +163,7 @@ def normalize(
     ###########################################################################################
     ######                                   transformation                              ######
     ###########################################################################################
-    # establish transforamtion methodologies:
+    # establish transformation methodologies:
     transformation_method = {
         'arcsine' : arcsine_transformation,
         'logit' : logit_transformation,
