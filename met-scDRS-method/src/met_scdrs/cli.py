@@ -33,6 +33,7 @@ def compute_score(
     preprocess: bool = True,
     preprocess_method: str = 'inverse',
     variance_clip: int = 5,
+    transformation : str = None,
     cov_file: str = None,
     ctrl_match_opt: str = 'mean_var',
     weight_opt: str = 'inv_std',
@@ -58,6 +59,11 @@ def compute_score(
         "inverse" : inverse the fraction into 1 - X
     variance_clip : int
         only genes with greater than specified percentile will be retained, default to 5th percentile
+    transformation : str, optional
+        "log" : inverse the fraction and then log1p normalize
+        "arcsine" : inverse the fraction then arcsine normalize
+        "log_library" : inverse the fraction then library normalize
+        if None, no transformation is applied
     h5ad_species : str
         Species of the cells in the `h5ad_file`. Supports automatic gene name translation 
         between human and mouse. As long as the species matches between `h5ad_file` and `gs_file`, 
@@ -96,6 +102,7 @@ def compute_score(
         --preprocess True \
         --preprocess_method inverse \
         --variance_clip 5 \
+        --transformation arcsine \
         --h5ad_species human \
         --gs_file <gs_file> \
         --gs_species human \
@@ -120,6 +127,7 @@ def compute_score(
     PREPROCESS = preprocess
     PREPROCESS_METHOD = preprocess_method
     VARIANCE_CLIP = variance_clip
+    TRANSFORMATION = transformation
     H5AD_SPECIES = h5ad_species
     COV_FILE = cov_file
     GS_FILE = gs_file
@@ -148,6 +156,7 @@ def compute_score(
     header += "--preprocess %s \\\n" % PREPROCESS
     header += "--preprocess_method %s \\\n" % PREPROCESS_METHOD
     header += "--variance_clip %s \\\n" % VARIANCE_CLIP
+    header += "--transformation %s \\\n" % TRANSFORMATION
     header += "--h5ad_species %s \\\n" % H5AD_SPECIES
     header += "--cov_file %s \\\n" % COV_FILE
     header += "--gs_file %s \\\n" % GS_FILE
@@ -252,6 +261,7 @@ def compute_score(
             h5ad_obj = adata,
             method = PREPROCESS_METHOD,
             variance_clip = VARIANCE_CLIP,
+            transformation = TRANSFORMATION,
             verbose = VERBOSE
         )
         peak = tracker.stop()

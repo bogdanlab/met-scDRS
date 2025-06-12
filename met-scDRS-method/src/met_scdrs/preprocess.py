@@ -17,11 +17,18 @@ def normalize(
     h5ad_obj,
     method : str = 'inverse',
     variance_clip : int = 5,
+    transformation : str = None,
     verbose = True
 ):
     """
     Preprocess the methylation cell by gene data
-
+    inverse the fraction to 1 - fraction such that higher methylation corresponds to higher expected gene expression
+    
+    Normalization schematics:
+        log normalization: log transformation of proportion log(1+proportion)
+        arcsine transformation: arcsine(proportion)
+        library size normalization: log(1+proportion / sum(proportion))
+    
     Parameters
     ----------
     h5ad_obj : anndata.AnnData
@@ -29,6 +36,11 @@ def normalize(
     method : str
         methodology to preprocess the single cell methylation matrix, supported methods:
         "inverse" : inverse the fraction into 1 - X
+    transformation : str, optional
+        "logit" : logit transformation
+        "arcsine" : arcsine transformation
+        "log_library" : inverse the fraction then library normalize
+        if None, no transformation is applied
     variance_clip : int
         only genes with greater than specified percentile will be retained
         Default is 5 (i.e., remove low-variance genes under the 5th percentile).
@@ -72,12 +84,59 @@ def normalize(
             variances_ = np.var(h5ad_obj.X, axis = 0)
         return variances_
     
+    def arcsine_transformation(adata, chunk_size):
+        # in case of float point error:
+        eps = 1e-8
+        
+        for chunk in range(0, adata.shape[0], chunk_size):
+            # assert that all entries in chunk is between 0 and 1:
+            assert np.all((adata.X[chunk : chunk + chunk_size] >= -eps) & (adata.X[chunk : chunk + chunk_size] <= 1 + eps))
+            
+            # if bound between 0 and 1, compute arcsin transformation:
+            adata.X[chunk : chunk + chunk_size] = np.arcsin(np.sqrt(adata.X[chunk : chunk + chunk_size])).astype(np.float32)
+    
+    def logit_transformation(adata, chunk_size):
+        # because 1e-8 still drive the result to infinity after np.chunk
+        eps = 1e-7 
+        
+        # lets make a logit transformation:
+        for chunk in range(0, adata.shape[0], chunk_size):
+            # assert that all entries in chunk is between 0 and 1:
+            assert np.all((adata.X[chunk : chunk + chunk_size] >= -eps) & (adata.X[chunk : chunk + chunk_size] <= 1 + eps))
+            
+            # clip current chunk:
+            adata_chunk = np.clip(adata.X[chunk : chunk + chunk_size], eps, 1 - eps) # stabilize logit transformation
+            adata_chunk = sp.special.logit(adata_chunk).astype(np.float32)
+            
+            # if bound between 0 and 1, compute logit:
+            adata.X[chunk : chunk + chunk_size] = adata_chunk
+    
+    def library_size_normalization(adata, chunk_size):
+        # in case of float point error:
+        eps = 1e-8
+        scale_factor = 10000
+        
+        # do this in chunks:
+        for chunk in range(0, adata.shape[0], chunk_size):
+            # assert that all entries in chunk between 0 and 1:
+            assert np.all((adata.X[chunk : chunk + chunk_size] >= -eps) & (adata.X[chunk : chunk + chunk_size] <= 1 + eps))
+            
+            # if bound between 0 and 1, library size normalization:
+            adata_chunk = adata.X[chunk : chunk + chunk_size]
+            library_size = np.sum(adata_chunk, axis = 1, keepdims = True)
+            adata_chunk = adata_chunk / library_size * scale_factor
+            adata_chunk = np.log1p(adata_chunk).astype(np.float32)
+            
+            # fill in the data:
+            adata.X[chunk : chunk + chunk_size] = adata_chunk
+    
     ###########################################################################################
     ######                                    preprocess .X                              ######
     ###########################################################################################
     # preprocess the .X data:
     methods = {'inverse' : inverse_method}
     preprocessed_data = methods[method](h5ad_obj)
+    
     gc.collect()
     
     ###########################################################################################
@@ -100,10 +159,26 @@ def normalize(
     assert (preprocessed_var >= var_threshold).all, "variance is not clipped properly, exitting"
     gc.collect()
     
+    ###########################################################################################
+    ######                                   transformation                              ######
+    ###########################################################################################
+    # establish transforamtion methodologies:
+    transformation_method = {
+        'arcsine' : arcsine_transformation,
+        'logit' : logit_transformation,
+        'library' : library_size_normalization
+        }
+    
+    # if transformation is provided
+    if transformation:
+        assert transformation in transformation_method.keys(), 'unsupported --transformation input'
+        transformation_method[transformation](preprocessed_data, chunk_size = 1000)
+    
     # method to usage 
     # print our usage information:
     print(f'Normalization completed, elapsed time: {(time.time() - initial_time):.3f} seconds') if verbose else None
     print(f"Finished normalization, memory usage: {get_memory():.2f} MB") if verbose else None
+    print(f"Top 5 preprocessed cells and genes: {preprocessed_data.X[0:5, 0:5]}") if verbose else None
     return preprocessed_data
 
 def category2dummy(
@@ -197,8 +272,7 @@ def preprocess(
     Parameters
     ----------
     data : anndata.AnnData
-        Single-cell data of shape (n_cell, n_gene). Assumed
-        to be size-factor-normalized and log1p-transformed.
+        Single-cell data of shape (n_cell, n_gene). Assumed normalized
     weight_option : str
         weighting option, same as cli input
     ctrl_match_key : str, default="mean_var"
@@ -584,6 +658,10 @@ def compute_stats(
     print(f'peak memory during cell stat computation: {peak:.2f} GB') if verbose else None
     
     return df_gene, df_cell
+
+
+
+
 
 ##############################################################################
 ######################## Preprocessing Subroutines ###########################
