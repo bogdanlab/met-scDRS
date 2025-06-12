@@ -60,9 +60,9 @@ def compute_score(
     variance_clip : int
         only genes with greater than specified percentile will be retained, default to 5th percentile
     transformation : str, optional
-        "log" : inverse the fraction and then log1p normalize
+        "logit" : inverse the fraction and then log1p normalize
         "arcsine" : inverse the fraction then arcsine normalize
-        "log_library" : inverse the fraction then library normalize
+        "library" : inverse the fraction then library normalize log1p(sum fraction per 10K)
         if None, no transformation is applied
     h5ad_species : str
         Species of the cells in the `h5ad_file`. Supports automatic gene name translation 

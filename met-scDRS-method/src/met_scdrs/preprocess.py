@@ -25,8 +25,8 @@ def normalize(
     inverse the fraction to 1 - fraction such that higher methylation corresponds to higher expected gene expression
     
     Normalization schematics:
-        log normalization: log transformation of proportion log(1+proportion)
-        arcsine transformation: arcsine(proportion)
+        logit: logit transformation of proportion logit(proportion)
+        arcsine transformation: arcsine(sqrt(proportion))
         library size normalization: log(1+proportion / sum(proportion))
     
     Parameters
@@ -51,6 +51,7 @@ def normalize(
     initial_time = time.time()
     header = "--preprocess_method %s \\\n" % method
     header += "--variance_clip %s \\\n" % variance_clip
+    header += "--transformation %s \\\n" % transforamtion
     print(header)
     
     # obtain the memory usage:
