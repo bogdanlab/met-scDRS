@@ -19,6 +19,7 @@ for gs_file in ${input_gs_dir}KC_75_traits_split.gs*; do
         "mean_var_length" \
         "arcsine" \
         "inv_std" \
+        '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/ges132489_30K_subset/mean_var_length_arcsine/sampling/' \
         '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/ges132489_30K_subset/mean_var_length_arcsine/'
 
     # treat the cluster nicely:
