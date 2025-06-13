@@ -37,10 +37,11 @@ h5ad_file="$1"
 gs_file="$2"
 control_scheme="$3"
 weight_opt="$4"
-output_dir="$5"
+diagnostic_dir="$5"
+output_dir="$6"
 
 # NOTE, the last (6th argument must be covariate file, otherwise interpretted incorrectly)
-cov_file="$6"
+cov_file="$7"
 
 DIR="/u/scratch/l/lixinzhe/tmp-file/tmp-gs/"
 tmp_gs="${DIR}${JOB_ID}_tmp.gs"
@@ -59,12 +60,13 @@ if [ ! -d "$DIR" ]; then
 else
   echo "Directory $DIR already exists."
 fi
+mkdir -p $diagnostic_dir
 
 # output the remaining gs:
-Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/met-scDRS-method/version-2.0/get-remaining-gs.R \
-    --scDRS_dir ${output_dir} \
-    --gs_file ${gs_file} \
-    --output_gs ${tmp_gs}
+# Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/met-scDRS-method/version-2.0/get-remaining-gs.R \
+#     --scDRS_dir ${output_dir} \
+#     --gs_file ${gs_file} \
+#     --output_gs ${tmp_gs}
 
 # compute the score using the remaining gs:
 if [ -n "$cov_file" ]; then
@@ -75,16 +77,16 @@ if [ -n "$cov_file" ]; then
         --variance_clip 5 \
         --h5ad_species mouse \
         --cov_file ${cov_file} \
-        --gs-file ${tmp_gs} \
+        --gs-file ${gs_file} \
         --gs_species human \
         --out_folder ${output_dir} \
         --ctrl_match_opt ${control_scheme} \
         --weight_opt ${weight_opt} \
         --n_ctrl 1000 \
-        --flag_return_ctrl_raw_score False \
+        --flag_return_ctrl_raw_score True \
         --flag_return_ctrl_norm_score True \
-        --diagnostic False \
-        --diagnostic_dir '/u/scratch/l/lixinzhe/revision_scratch/batch_sampling/' \
+        --diagnostic True \
+        --diagnostic_dir ${diagnostic_dir} \
         --verbose True
 else
     met_scdrs compute_score \
@@ -93,16 +95,16 @@ else
         --preprocess_method inverse \
         --variance_clip 5 \
         --h5ad_species mouse \
-        --gs-file ${tmp_gs} \
+        --gs-file ${gs_file} \
         --gs_species human \
         --out_folder ${output_dir} \
         --ctrl_match_opt ${control_scheme} \
         --weight_opt ${weight_opt} \
         --n_ctrl 1000 \
-        --flag_return_ctrl_raw_score False \
+        --flag_return_ctrl_raw_score True \
         --flag_return_ctrl_norm_score True \
-        --diagnostic False \
-        --diagnostic_dir '/u/scratch/l/lixinzhe/revision_scratch/batch_sampling/' \
+        --diagnostic True \
+        --diagnostic_dir ${diagnostic_dir} \
         --verbose True
 fi
 
