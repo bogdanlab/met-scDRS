@@ -33,6 +33,7 @@ setuptools.setup(
         "tqdm",
         "fire>=0.4.0",
         "pytest>=6.2.0",
+        "joblib>=1.0.0",
     ],
     entry_points={
         'console_scripts': [

@@ -11,6 +11,8 @@ import scanpy as sc
 import os
 import time
 import re
+from multiprocessing.dummy import Pool as ThreadPool
+from tqdm import tqdm
 
 ### HEADER ########################################################################################
 def get_cli_head():
@@ -437,7 +439,10 @@ def probe_background(
     # set the cell meta data:
     if cell_meta_path:
         # load in the file:
-        cell_meta = pd.read_csv(cell_meta_path, index_col = 0, sep = '\t')
+        if cell_meta_path.endswith('.tsv'):
+            cell_meta = pd.read_csv(cell_meta_path, index_col = 0, sep = '\t')
+        if cell_meta_path.endswith('.csv'):
+            cell_meta = pd.read_csv(cell_meta_path, index_col = 0, sep = ',')
         
         # if the cell group is provided, subset to the pd.Series
         if group_column:
@@ -449,6 +454,7 @@ def probe_background(
     
     # make sure that the score input is a real path or a directory
     assert (os.path.isfile(score) or os.path.isdir(score)), "score needs to be either a file or a directory"
+    
     if os.path.isdir(score) and os.path.isdir(plot_path):
         # grab out the full score files:
         score_files = [file for file in os.listdir(score) if file.endswith('full_score.gz')]

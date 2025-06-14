@@ -133,4 +133,5 @@ met_scdrs probe_background \
     --sampling 5 \
     --cell_meta_path /u/home/l/lixinzhe/project-geschwind/data/Liu_et_al_2021_methylation_gse132489/simulation-10K-subset-GSE132489-meta.tsv \
     --group_column MajorType \
-    --seed 103
+    --seed 103 \
+    --thread_num 2
