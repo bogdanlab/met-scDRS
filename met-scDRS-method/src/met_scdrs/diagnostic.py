@@ -293,6 +293,24 @@ def _plot_calibration(observed, theoretical, plot_path, **kwargs):
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
 
+def _write_metric(ctrl_raw_shapiro, ctrl_norm_shapiro, wasserstein, index, path):
+    # make a dataframe for the p values:
+    metric_df = pd.DataFrame({
+        'ctrl_raw_shapiro' : ctrl_raw_shapiro,
+        'ctrl_norm_shapiro' : ctrl_norm_shapiro,
+        'wasserstein' : wasserstein
+        })
+    
+    # correction:
+    metric_df['ctrl_raw_adjusted'] = multipletests(metric_df['ctrl_raw_shapiro'], method = 'bonferroni')[1]
+    metric_df['ctrl_norm_adjusted'] = multipletests(metric_df['ctrl_norm_shapiro'], method = 'bonferroni')[1]
+    
+    # rename the index
+    metric_df.index = index
+    
+    # print a warning when there are cells that do not conform to normal distribution
+    metric_df.to_csv(path, sep = '\t', index = True, header = True)
+
 def plot_bg_distribution(score, plot_path, sampling = 100, cell_group = None, seed = 103):
     """
     visualize background distribution as a distribution 
@@ -358,7 +376,7 @@ def plot_bg_distribution(score, plot_path, sampling = 100, cell_group = None, se
         norm_pvals = []
         wasserstein_distance = []
         
-        for i in tqdm(range(1, len(zscored))):
+        for i in tqdm(range(len(zscored))):
             stat, pval = scipy.stats.shapiro(control_raw_score.iloc[i, :])
             pvals.append(pval)
             stat, pval = scipy.stats.shapiro(normalized_raw_score.iloc[i, :])
@@ -388,6 +406,17 @@ def plot_bg_distribution(score, plot_path, sampling = 100, cell_group = None, se
             plt.xlabel("control raw score wasserstein distance")
             plt.savefig(plot_path_density, dpi=300, bbox_inches='tight')
             plt.close()
+        
+        # make a table of p values:
+        if plot_path:
+            write_path = re.sub('.png', '_metric.txt', plot_path)
+            _write_metric(
+                ctrl_raw_shapiro = pvals,
+                ctrl_norm_shapiro = norm_pvals,
+                wasserstein = wasserstein_distance,
+                index = control_raw_score.index,
+                path = write_path
+            )
         
         ###########################################################################################
         ######                       plot sampled control score                              ######
