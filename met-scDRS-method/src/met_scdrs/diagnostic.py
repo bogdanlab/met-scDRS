@@ -356,14 +356,12 @@ def plot_bg_distribution(score, plot_path, sampling = 100, cell_group = None, se
         # set the mean cell as a reference for both the raw and raw score
         pvals = []
         norm_pvals = []
-        reference = zscored.iloc[0, :]
-        norm_ref = normalized_raw_score.iloc[0, :]
         wasserstein_distance = []
         
         for i in tqdm(range(1, len(zscored))):
-            stat, pval = scipy.stats.ks_2samp(reference, zscored.iloc[i, :])
+            stat, pval = scipy.stats.shapiro(control_raw_score.iloc[i, :])
             pvals.append(pval)
-            stat, pval = scipy.stats.ks_2samp(norm_ref, zscored.iloc[i, :])
+            stat, pval = scipy.stats.shapiro(normalized_raw_score.iloc[i, :])
             norm_pvals.append(pval)
             wasserstein_distance.append(sp.stats.wasserstein_distance(control_raw_score.iloc[1, :], control_raw_score.iloc[i, :]))
         
