@@ -50,7 +50,6 @@ htmlcov/
 *.h5ad
 *.csv
 *.tsv
-*.gz
 *.zip
 *.tar.gz
 *.hdf5
