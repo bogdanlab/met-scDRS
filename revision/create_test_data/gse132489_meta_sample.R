@@ -31,6 +31,15 @@ cell = rownames(cov_design_matrix)
 cov_design_matrix = cbind(cell, cov_design_matrix)
 
 write.table(
+    meta,
+    sep = '\t',
+    quote = FALSE,
+    col.names = TRUE,
+    row.names = TRUE,
+    file = '/u/home/l/lixinzhe/project-geschwind/data/Liu_et_al_2021_methylation_gse132489/simulation-10K-subset-GSE132489-meta.tsv'
+    )
+
+write.table(
     cov_design_matrix,
     sep = '\t',
     quote = FALSE,
