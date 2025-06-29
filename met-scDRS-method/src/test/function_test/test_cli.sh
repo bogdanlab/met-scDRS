@@ -135,3 +135,26 @@ met_scdrs probe_background \
     --group_column MajorType \
     --seed 103 \
     --thread_num 2
+    
+###########################################################################################
+######                                    check save                              ######
+###########################################################################################
+met_scdrs compute_score \
+    --h5ad_file '/u/home/l/lixinzhe/project-geschwind/data/Liu_et_al_2021_methylation_gse132489/simulation-subset-GSE132489-mch.h5ad' \
+    --preprocess True \
+    --preprocess_method inverse \
+    --variance_clip 5 \
+    --transformation arcsine \
+    --h5ad_species mouse \
+    --gs-file '/u/project/geschwind/lixinzhe/scDRS-output/magma-out/Kangcheng-gs/gs_file/small_test_from_publication.gs' \
+    --gs_species human \
+    --out_folder '/u/scratch/l/lixinzhe/tmp_loc/' \
+    --intermediate '/u/scratch/l/lixinzhe/tmp_loc/small_test_processed.pkl'\
+    --ctrl_match_opt mean_var_length \
+    --weight_opt inv_std \
+    --n_ctrl 1000 \
+    --flag_return_ctrl_raw_score True \
+    --flag_return_ctrl_norm_score True \
+    --diagnostic True \
+    --diagnostic_dir '/u/scratch/l/lixinzhe/tmp_loc/sampling/' \
+    --verbose True
