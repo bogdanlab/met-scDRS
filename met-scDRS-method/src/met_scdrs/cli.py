@@ -56,6 +56,10 @@ def compute_score(
     h5ad_file : str
         Path to the single-cell `.h5ad` file. The `.X` attribute should contain a cell-by-gene 
         methylation matrix.
+        Could also be a `.pkl` file where the file is a preprocess version output by --intermediate file
+        from met_scDRS itself. This is mainly for reducing the compute requirement where memory intensive
+        operation (preprocessing) can be computed once only and saved for all met_scdrs compute_score across
+        many traits.
     preprocess : bool
         if met_scdrs should preprocess the h5ad
         note that if False, met_scdrs interpret the h5ad file as already preprocessed
@@ -214,7 +218,19 @@ def compute_score(
     print('LOADING DATA')
     
     # load h5ad data:
-    adata = met_scdrs.util.load_h5ad(H5AD_FILE)
+    if H5AD_FILE.endswith('.h5ad'):
+        adata = met_scdrs.util.load_h5ad(H5AD_FILE)
+    
+    #if it is a pickle file
+    elif H5AD_FILE.endswith('.pkl'):
+        assert not PREPROCESS, 'if pickle is provided, preprocess must be false'
+        with open(H5AD_FILE, 'rb') as f:
+            adata = pickle.load(f)
+    
+    # if the postfix is neither h5ad or pickle, exit early
+    else:
+        raise ValueError("Unsupported h5ad format, must either be .h5ad or .pkl")
+    
     print(
         "--h5ad-file loaded: n_cell=%d, n_gene=%d (sys_time=%0.1fs)"
         % (adata.shape[0], adata.shape[1], time.time() - sys_start_time)
@@ -294,7 +310,6 @@ def compute_score(
             verbose = VERBOSE)
         
         if INTERMEDIATE:
-            import pickle
             with open(INTERMEDIATE, "wb") as f: pickle.dump(adata, f)
     
     if DIAGNOSTIC:
