@@ -35,11 +35,16 @@ cov = pd.DataFrame({
 })
 
 # also create one for 75k subset:
-subset_cov = cov.loc[cov.cell.isin(subset_meta.cell), :]
+cov.index = cov.cell
+subset_meta.index = subset_meta.cell
+subset_cov = cov.loc[subset_meta.cell, :]
+
+# assertion:
+assert (subset_cov.index == subset_meta.index).all()
 
 # output the cov:
-cov.to_csv('/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/full-mch-centered-log-library.cov', index = False)
-subset_cov.to_csv('/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/subset75k-mch-centered-log-library.cov', index = False)
+cov.to_csv('/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/full-mch-centered-log-library.cov', index = False, sep = '\t')
+subset_cov.to_csv('/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/subset75k-mch-centered-log-library.cov', index = False, sep = '\t')
 
 # output the meta:
 meta.to_csv('/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/meta_data_with_rowSum_mch.csv', index = False)
