@@ -115,6 +115,8 @@ Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/GSE215353/met-
 # script assumes UMAP1 and UMAP2 are colnames in the meta_data table, cutoff is the FDR cutoff to consider as significance
 ```
 <img src="images/2025-07-01-PASS_MDD_Howard2019-scDRS-score-umap.png" alt="Human brain atlas umap for MDD met-scDRS" width="400"/>
+<img src="images/GSE215353-cell-type-umap.jpg" alt="Human brain atlas umap colored by cell types" width="400"/>
+
 
 ## License
 
