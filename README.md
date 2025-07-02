@@ -116,7 +116,20 @@ Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/GSE215353/met-
 ```
 <img src="images/2025-07-01-PASS_MDD_Howard2019-scDRS-score-umap.png" alt="Human brain atlas umap for MDD met-scDRS" width="400"/>
 <img src="images/GSE215353-cell-type-umap.jpg" alt="Human brain atlas umap colored by cell types" width="400"/>
-
+<p align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="images/2025-07-01-PASS_MDD_Howard2019-scDRS-score-umap.png" width="400"/><br/>
+        <sub>Human brain atlas umap for MDD met-scDRS</sub>
+      </td>
+      <td align="center">
+        <img src="images/GSE215353-cell-type-umap.jpg" alt="Human brain atlas umap colored by cell types" width="400"/><br/>
+        <sub>Human brain atlas umap colored by cell types</sub>
+      </td>
+    </tr>
+  </table>
+</p>
 
 ## License
 
