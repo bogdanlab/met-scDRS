@@ -102,6 +102,33 @@ met-scdrs compute_score \
 
 ```
 
+### Visualization in UMAP:
+
+```sh
+Rscript GSE215353/met-scDRS-v2.0-run/visualization/significant-cell-visualization-umap.R \
+    --dir <out_folder> \
+    --meta_data <pmeta_data_csv_file> \
+    --xaxis "UMAP_1" \
+    --yaxis "UMAP_2" \
+    --cutoff 0.1 \
+    --out <plotting_directory>
+# script assumes UMAP1 and UMAP2 are colnames in the meta_data table, cutoff is the FDR cutoff to consider as significance
+```
+<p align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="images/2025-07-01-PASS_MDD_Howard2019-scDRS-score-umap.png" width="400"/><br/>
+        <sub>Human brain atlas umap for MDD met-scDRS</sub>
+      </td>
+      <td align="center">
+        <img src="images/GSE215353-cell-type-umap.jpg" alt="Human brain atlas umap colored by cell types" width="400"/><br/>
+        <sub>Human brain atlas umap colored by cell types</sub>
+      </td>
+    </tr>
+  </table>
+</p>
+
 ## License
 
 This project is licensed under the MIT License. See below for details.

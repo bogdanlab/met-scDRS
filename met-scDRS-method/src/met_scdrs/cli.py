@@ -13,6 +13,7 @@ import time
 import re
 from multiprocessing.dummy import Pool as ThreadPool
 from tqdm import tqdm
+import pickle
 
 ### HEADER ########################################################################################
 def get_cli_head():
@@ -32,6 +33,7 @@ def compute_score(
     gs_file: str,
     gs_species: str,
     out_folder: str,
+    intermediate: str = None,
     preprocess: bool = True,
     preprocess_method: str = 'inverse',
     variance_clip: int = 5,
@@ -54,8 +56,14 @@ def compute_score(
     h5ad_file : str
         Path to the single-cell `.h5ad` file. The `.X` attribute should contain a cell-by-gene 
         methylation matrix.
+        Could also be a `.pkl` file where the file is a preprocess version output by --intermediate file
+        from met_scDRS itself. This is mainly for reducing the compute requirement where memory intensive
+        operation (preprocessing) can be computed once only and saved for all met_scdrs compute_score across
+        many traits.
     preprocess : bool
-        if the fraction matrix in `.h5ad` be preprocessed
+        if met_scdrs should preprocess the h5ad
+        note that if False, met_scdrs interpret the h5ad file as already preprocessed
+        e.g.: intermediate file from previous runs to save compute
     preprocess_method : str
         methodology to preprocess the single cell methylation matrix, supported methods:
         "inverse" : inverse the fraction into 1 - X
@@ -77,6 +85,8 @@ def compute_score(
         for either human or mouse.
     out_folder : str
         Directory where output files will be saved.
+    intermediate : str
+        Intermediate h5ad save if desired, outputs the preprocessed h5ad
     cov_file : str, optional
         Path to a design matrix for covariate adjustment using a linear model. Format should match 
         that used in scDRS.
@@ -109,6 +119,7 @@ def compute_score(
         --gs_file <gs_file> \
         --gs_species human \
         --out_folder <out_folder> \
+        --intermediate <intermediate_h5ad> \
         --cov_file <cov_file> \
         --ctrl_match_opt mean_var \
         --weight_opt inv_std \
@@ -135,6 +146,7 @@ def compute_score(
     GS_FILE = gs_file
     GS_SPECIES = gs_species
     OUT_FOLDER = out_folder
+    INTERMEDIATE = intermediate
     CTRL_MATCH_OPT = ctrl_match_opt
     WEIGHT_OPT = weight_opt
     N_CTRL = n_ctrl
@@ -169,6 +181,7 @@ def compute_score(
     header += "--flag_return_ctrl_raw_score %s \\\n" % FLAG_RETURN_CTRL_RAW_SCORE
     header += "--flag_return_ctrl_norm_score %s \\\n" % FLAG_RETURN_CTRL_NORM_SCORE
     header += "--out_folder %s\n" % OUT_FOLDER
+    header += "--processed_intermediate_h5ad %s \\\n" % INTERMEDIATE
     header += "--diagnostic %s\n" % DIAGNOSTIC
     header += "--diagnostic_dir %s\n" % DIAGNOSTIC_DIR
     header += "--verbose %s \n" % VERBOSE
@@ -196,13 +209,28 @@ def compute_score(
     if not met_scdrs.util.check_folder(OUT_FOLDER):
         raise ValueError("--out_folder does not exist")
     
+    # also check for either the preprocess flag or the intermediate flag must be truthy:
+    assert not INTERMEDIATE or PREPROCESS, "if intermediate file is provided, preprocess must be True"
+    
     ###########################################################################################
     ######                                    DATA LOADING                               ######
     ###########################################################################################
     print('LOADING DATA')
     
     # load h5ad data:
-    adata = met_scdrs.util.load_h5ad(H5AD_FILE)
+    if H5AD_FILE.endswith('.h5ad'):
+        adata = met_scdrs.util.load_h5ad(H5AD_FILE)
+    
+    #if it is a pickle file
+    elif H5AD_FILE.endswith('.pkl'):
+        assert not PREPROCESS, 'if pickle is provided, preprocess must be false'
+        with open(H5AD_FILE, 'rb') as f:
+            adata = pickle.load(f)
+    
+    # if the postfix is neither h5ad or pickle, exit early
+    else:
+        raise ValueError("Unsupported h5ad format, must either be .h5ad or .pkl")
+    
     print(
         "--h5ad-file loaded: n_cell=%d, n_gene=%d (sys_time=%0.1fs)"
         % (adata.shape[0], adata.shape[1], time.time() - sys_start_time)
@@ -268,18 +296,21 @@ def compute_score(
         )
         peak = tracker.stop()
         print(f'peak memory during normalization: {peak:.2f} GB') if VERBOSE else None
-
-    # preprocess with covariates
-    met_scdrs.preprocess(
-        adata,
-        cov=df_cov,
-        n_mean_bin=10,
-        n_var_bin=10,
-        n_length_bin = 10,
-        copy=False,
-        weight_option=WEIGHT_OPT,
-        ctrl_match_key=CTRL_MATCH_OPT,
-        verbose = VERBOSE)
+        
+        # preprocess with covariates
+        met_scdrs.preprocess(
+            adata,
+            cov=df_cov,
+            n_mean_bin=10,
+            n_var_bin=10,
+            n_length_bin = 10,
+            copy=False,
+            weight_option=WEIGHT_OPT,
+            ctrl_match_key=CTRL_MATCH_OPT,
+            verbose = VERBOSE)
+        
+        if INTERMEDIATE:
+            with open(INTERMEDIATE, "wb") as f: pickle.dump(adata, f)
     
     if DIAGNOSTIC:
         met_scdrs.diagnostic.ctrl_match_bin(

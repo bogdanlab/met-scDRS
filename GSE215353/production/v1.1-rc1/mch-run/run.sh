@@ -1,6 +1,6 @@
 ### submission.sh #################################################################################
 # call scDRS:
-submission_script="/u/home/l/lixinzhe/project-github/met-scDRS/GSE215353/production/v1.1.0-rc1/mch-run/submission.sh"
+submission_script="/u/home/l/lixinzhe/project-github/met-scDRS/GSE215353/production/v1.1-rc1/mch-run/submission.sh"
 
 # split data:
 input_gs_dir="/u/home/l/lixinzhe/project-geschwind/port/scratch/parallel_gs/"
@@ -15,14 +15,14 @@ for gs_file in ${input_gs_dir}KC_75_traits_split.gs*; do
     
     # compute scDRS:
     qsub ${submission_script} \
-        '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/processed-mch-v1_0_0_rc1.h5ad' \
+        '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/met_scdrs_processed-mch-v1_1_1_rc1.pkl' \
         "${gs_file}" \
         "mean_var_length" \
         "arcsine" \
         "inv_std" \
         '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/sampling/' \
         '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/' \
-        '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/processed-covarite.cov'
+        '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/full-mch-centered-log-library.cov'
 
     # treat the cluster nicely:
     sleep 1
