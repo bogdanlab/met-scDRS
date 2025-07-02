@@ -114,7 +114,7 @@ Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/GSE215353/met-
     --out <plotting_directory>
 # script assumes UMAP1 and UMAP2 are colnames in the meta_data table, cutoff is the FDR cutoff to consider as significance
 ```
-
+![Alt text](images/2025-07-01-PASS_MDD_Howard2019-scDRS-score-umap.png)
 
 
 ## License
