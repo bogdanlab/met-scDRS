@@ -105,7 +105,7 @@ met-scdrs compute_score \
 ### Visualization in UMAP:
 
 ```sh
-Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/GSE215353/met-scDRS-v2.0-run/visualization/significant-cell-visualization-umap.R \
+Rscript GSE215353/met-scDRS-v2.0-run/visualization/significant-cell-visualization-umap.R \
     --dir <out_folder> \
     --meta_data <pmeta_data_csv_file> \
     --xaxis "UMAP_1" \
