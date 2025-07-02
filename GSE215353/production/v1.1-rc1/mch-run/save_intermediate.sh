@@ -31,7 +31,7 @@ module load anaconda3
 conda activate default_r_base
 
 input_gs_dir="/u/home/l/lixinzhe/project-geschwind/port/scratch/parallel_gs/"
-gs_file=${input_gs_dir}KC_75_traits_split.gs1
+gs_file=${input_gs_dir}KC_75_traits_split.gs8
 # for each of the gs file submit a job:
 echo "read gs file:"
 echo "$gs_file"
@@ -43,7 +43,7 @@ met_scdrs compute_score \
     --variance_clip 5 \
     --transformation arcsine \
     --h5ad_species human \
-    --cov_file '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/processed-covarite.cov' \
+    --cov_file '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/full-mch-centered-log-library.cov' \
     --gs-file ${gs_file} \
     --gs_species human \
     --out_folder '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/' \

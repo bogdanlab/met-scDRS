@@ -22,7 +22,7 @@ for gs_file in ${input_gs_dir}KC_75_traits_split.gs*; do
         "inv_std" \
         '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/sampling/' \
         '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/' \
-        '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/processed-covarite.cov'
+        '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/full-mch-centered-log-library.cov'
 
     # treat the cluster nicely:
     sleep 1
