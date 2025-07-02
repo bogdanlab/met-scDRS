@@ -102,6 +102,21 @@ met-scdrs compute_score \
 
 ```
 
+### Visualization in UMAP:
+
+```sh
+Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/GSE215353/met-scDRS-v2.0-run/visualization/significant-cell-visualization-umap.R \
+    --dir <out_folder> \
+    --meta_data <pmeta_data_csv_file> \
+    --xaxis "UMAP_1" \
+    --yaxis "UMAP_2" \
+    --cutoff 0.1 \
+    --out <plotting_directory>
+# script assumes UMAP1 and UMAP2 are colnames in the meta_data table, cutoff is the FDR cutoff to consider as significance
+```
+
+
+
 ## License
 
 This project is licensed under the MIT License. See below for details.
