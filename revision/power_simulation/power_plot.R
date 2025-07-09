@@ -7,7 +7,7 @@ library(ggplot2);
 library(dplyr);
 
 # specify different directories:
-fixed.overlap.directory <- '/u/project/geschwind/lixinzhe/scDRS-output/magma-out/Kangcheng-gs/causal-simulation/fraction/result/fixed-overlap/'
+fixed.overlap.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-overlap/'
 fixed.effect.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-perturbation/'
 
 # also specify the perturbation record paths:
@@ -29,7 +29,7 @@ for(simulation.mode in c('overlap', 'effect')) {
     score.files <- list.files(scDRS.directory, pattern = '\\.score.gz', full.names = TRUE);
     
     if(simulation.mode == 'overlap'){
-        score.files = score.files[grepl("seed-.*-effect-0.[0-9.]+-overlap-0.25-causal-simulation\\.h5ad\\.score\\.gz$", score.files)]
+        score.files = score.files[grepl("seed-.*-effect-0.[0-9.]+-overlap-0.5-causal-simulation\\.h5ad\\.score\\.gz$", score.files)]
         }
     
     risk.score <- vector('list', length = length(score.files));

@@ -8,13 +8,13 @@ Rscript ${executable} \
     --data_matrix ${data_matrix} \
     --gs_file ${gs_file} \
     --trait "UKB_460K.body_HEIGHTz" \
-    --perturbation_effect_start 0.95 \
-    --perturbation_effect_end 1.00 \
-    --effect_step 0.01 \
+    --perturbation_effect_start 0.10 \
+    --perturbation_effect_end 0.9 \
+    --effect_step 0.1 \
     --gene_number 1000 \
     --cell_number 500 \
-    --overlap_start 0.25 \
-    --overlap_end 0.25 \
+    --overlap_start 0.5 \
+    --overlap_end 0.5 \
     --overlap_step 0.1 \
     --replication 100 \
     --output_dir ${output_dir}
