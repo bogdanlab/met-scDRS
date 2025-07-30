@@ -7,11 +7,11 @@ library(ggplot2);
 library(dplyr);
 
 # specify different directories:
-fixed.overlap.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-overlap/'
+fixed.overlap.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-overlap/informed/'
 fixed.effect.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-perturbation/'
 
 # also specify the perturbation record paths:
-overlap.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-overlap/'
+overlap.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-overlap/informed/'
 effect.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-perturbation/'
 
 # bundle the result directories:
