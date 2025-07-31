@@ -37,18 +37,21 @@ Rscript ${executable} \
     --replication 50 \
     --output_dir ${output_dir}
 
-# output_dir="/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-perturbation/informed/"
-# Rscript ${executable} \
-#     --data_matrix ${data_matrix} \
-#     --gs_file ${gs_file} \
-#     --trait "UKB_460K.body_HEIGHTz" \
-#     --perturbation_effect_start 1.005 \
-#     --perturbation_effect_end 1.005 \
-#     --effect_step 0.001 \
-#     --gene_number 1000 \
-#     --cell_number 500 \
-#     --overlap_start 0.1 \
-#     --overlap_end 0.5 \
-#     --overlap_step 0.1 \
-#     --replication 100 \
-#     --output_dir ${output_dir}
+# merge into the same folder:
+cp /u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-overlap/informed/*.csv "/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-overlap/informed_high/"
+
+output_dir="/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-perturbation/informed/"
+Rscript ${executable} \
+    --data_matrix ${data_matrix} \
+    --gs_file ${gs_file} \
+    --trait "UKB_460K.body_HEIGHTz" \
+    --perturbation_effect_start 0.7 \
+    --perturbation_effect_end 0.7 \
+    --effect_step 0.001 \
+    --gene_number 1000 \
+    --cell_number 500 \
+    --overlap_start 0.1 \
+    --overlap_end 0.6 \
+    --overlap_step 0.1 \
+    --replication 50 \
+    --output_dir ${output_dir}

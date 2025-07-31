@@ -7,12 +7,12 @@ library(ggplot2);
 library(dplyr);
 
 # specify different directories:
-fixed.overlap.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-overlap/informed/'
-fixed.effect.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-perturbation/'
+fixed.overlap.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-overlap/informed_high/'
+fixed.effect.directory <- '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/power_simulation/fixed-perturbation/informed/'
 
 # also specify the perturbation record paths:
-overlap.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-overlap/informed/'
-effect.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-perturbation/'
+overlap.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-overlap/informed_high/'
+effect.perturbation <- '/u/scratch/l/lixinzhe/revision_scratch/simulation/fixed-perturbation/informed/'
 
 # bundle the result directories:
 result.directories <- c(fixed.overlap.directory, fixed.effect.directory);
@@ -116,6 +116,7 @@ for(simulation.mode in c('overlap', 'effect')) {
         # aggregate the mean and sd from simmulation:
         plot.df <- summary.data.frame %>% group_by(effect) %>% summarize(average = mean(power), sd = sd(power));
         plot.df <- as.data.frame(plot.df);
+        plot.df$effect <- 1 - plot.df$effect
 
         # for data checking:
         # mean(summary.data.frame[summary.data.frame$effect == 1.001,'power']) # same as dplyr result
@@ -133,6 +134,7 @@ for(simulation.mode in c('overlap', 'effect')) {
             aes(x = effect, y = average)) +
             geom_pointrange(aes(ymin = average - 2 * sd, ymax = average + 2 * sd)) + 
             theme_classic() +
+            coord_cartesian(ylim = c(NA, 1)) +
             ylab('power') +
             xlab('perturbation effect') +
             theme(text = element_text(size = 20))
@@ -187,3 +189,6 @@ for(simulation.mode in c('overlap', 'effect')) {
     cat('the maximum standard deviation across causal simulation is: ', max(plot.df$sd), '\n')
 
 }
+
+# the maximum standard deviation across causal simulation is:  0.0319112 
+# the maximum standard deviation across causal simulation is:  0.03685568
