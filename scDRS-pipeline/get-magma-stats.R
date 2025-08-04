@@ -49,7 +49,7 @@ if (!is.character(args[3])) {
 
 # match the entrez id from the input:
 gs.munge.input <- data.frame(
-    gene = ncbi.loc$hgnc[match(rownames(magma.summary), ncbi.loc$entrez)],
+    gene = ncbi.loc$hgnc[match(rownames(magma.summary), as.character(ncbi.loc$entrez))],
     trait = magma.summary$ZSTAT
     );
 
