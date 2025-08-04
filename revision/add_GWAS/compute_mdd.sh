@@ -39,9 +39,9 @@ met_scdrs compute_score \
     --transformation arcsine \
     --h5ad_species human \
     --cov_file '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/full-mch-centered-log-library.cov' \
-    --gs-file "/u/home/l/lixinzhe/project-geschwind/data/SCZ-GWAS/ALL/out/step2/scz-munge-output.gs" \
+    --gs-file "/u/home/l/lixinzhe/project-geschwind/data/MDD-GWAS/ALL/out/step2/mdd-munge-output.gs" \
     --gs_species human \
-    --out_folder /u/home/l/lixinzhe/project-geschwind/data/SCZ-GWAS/met_scdrs/out/ \
+    --out_folder /u/home/l/lixinzhe/project-geschwind/data/MDD-GWAS/met_scdrs/out/ \
     --ctrl_match_opt mean_var_length \
     --weight_opt inv_std \
     --n_ctrl 1000 \
