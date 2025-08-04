@@ -48,6 +48,3 @@ scdrs munge-gs \
     --weight zscore \
     --n-max 1000 \
     --n_min 50
-
-less /u/home/l/lixinzhe/project-geschwind/data/SCZ-GWAS/ALL/out/step2/scz-munge-output.gs
-less "/u/project/geschwind/lixinzhe/scDRS-output/magma-out/Kangcheng-gs/gs_file/magma_10kb_top1000_zscore.75_traits.rv1.gs" | grep PASS_Schizophrenia_Pardinas2018
