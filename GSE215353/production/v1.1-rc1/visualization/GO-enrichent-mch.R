@@ -181,3 +181,6 @@ for (disease in network.traits){
     print(network.plot);
     dev.off();
 }
+
+saveRDS(score.mch.cor, '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/score_mch_correlation.rds')
+saveRDS(readable.result, '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/ontology_readable_result.rds')
