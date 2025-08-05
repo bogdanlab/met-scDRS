@@ -94,5 +94,5 @@ write.table(
 result_df$cell_class = meta$X_CellClass[match(rownames(result_df), meta$X_MajorType)]
 
 ###########################################################################################
-######                                    Section Title                              ######
+######                          load in the average mch                              ######
 ###########################################################################################
