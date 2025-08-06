@@ -515,6 +515,32 @@ def probe_background(
         print('please check input, score and plot_path can either be all directories, or all file paths')
 
 
+def convert_to_h5ad(
+    csv_path : str
+    ):
+    """
+    Convert the csv file into h5ad
+    
+    Parameters:
+    -----------
+    csv_path : str
+        file path to the csv file where the methylation ratio is saved
+    """
+    # check for file input:
+    assert csv_path.endswith('csv'), "please supply a csv file"
+    assert os.path.exists(csv_path), "please supply a csv file"
+    
+    # check if file output exists:
+    h5ad_out = re.sub('csv', 'h5ad', csv_path)
+    if os.path.exists(h5ad_out):
+        raise ValueError('File already exists, please make sure it is not already converted')
+    else:
+        met_scdrs.convert(
+            csv_path = csv_path,
+            h5ad_path = h5ad_out
+            )
+    print(f'csv file converted to {h5ad_out}')
+
 def quote_from_cyberpunk2077():
     # meant for testing script
     print('To This!')
