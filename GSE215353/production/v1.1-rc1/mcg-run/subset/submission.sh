@@ -73,7 +73,7 @@ Rscript /u/home/l/lixinzhe/project-github/scDRS-applications/code/met-scDRS-meth
 if [ -n "$cov_file" ]; then
     met_scdrs compute_score \
         --h5ad_file ${h5ad_file} \
-        --preprocess True \
+        --preprocess False \
         --preprocess_method inverse \
         --variance_clip 5 \
         --transformation ${transform_scheme} \
@@ -93,7 +93,7 @@ if [ -n "$cov_file" ]; then
 else
     met_scdrs compute_score \
         --h5ad_file ${h5ad_file} \
-        --preprocess True \
+        --preprocess False \
         --preprocess_method inverse \
         --variance_clip 5 \
         --transformation ${transform_scheme} \
