@@ -281,7 +281,7 @@ lgd = Legend(
             digit = 2 # round to 2 digit
             )
         ),
-    title = 'region\nspecificity\nindex',
+    title = 'average\nmet-scDRS',
     title_gp = gpar(fontsize = 10),
     labels_gp = gpar(fontsize = 8)
     )
