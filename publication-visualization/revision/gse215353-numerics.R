@@ -96,3 +96,38 @@ result_df$cell_class = meta$X_CellClass[match(rownames(result_df), meta$X_MajorT
 ###########################################################################################
 ######                          load in the average mch                              ######
 ###########################################################################################
+
+###########################################################################################
+######                                  CpG methylation                              ######
+###########################################################################################
+
+
+
+
+###########################################################################################
+######                              robustness analysis                              ######
+###########################################################################################
+# load in the null tests:
+p_matrix = read.table('/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse215353_full/arcsine-null/PASS_MDD_Howard2019_calibration_p_metric.txt', sep = '\t', header = T)
+bad_nulls_num = sum(p_matrix$ctrl_norm_adjusted < 0.1)
+cat(bad_nulls_num, 'nulls are significantly not normal in MDD \n')
+
+# load in the mouse MDD result:
+mouse_mdd_scdrs = read.table(
+    file = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges132489_full/mean_var_length_arcsine/PASS_MDD_Howard2019.score.gz',
+    sep = '\t',
+    header = TRUE,
+    row.names = 1
+    )
+mouse_mdd_scdrs$fdr = p.adjust(mouse_mdd_scdrs$pval, method = 'fdr')
+mouse_meta = read.table(
+    file = "/u/project/geschwind/lixinzhe/data/Liu_et_al_2021_methylation_gse132489/processed-full/all_meta_with_rowSum.csv",
+    sep = ',',
+    row.names = 1,
+    header = TRUE
+    )
+
+# look at the number of significant cells by cell type:
+significant_cells = rownames(mouse_mdd_scdrs)[mouse_mdd_scdrs$fdr < 0.1]
+table(mouse_meta[significant_cells, 'MajorType']) / length(significant_cells) * 100
+
