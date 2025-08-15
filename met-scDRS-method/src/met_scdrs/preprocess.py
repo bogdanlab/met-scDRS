@@ -12,7 +12,24 @@ from anndata import AnnData
 import gc
 from tqdm import tqdm
 import os
+import scanpy as sc
+import anndata
 
+def convert(csv_path, h5ad_path):
+    """
+    Convert the csv file into an h5ad file for downstream compute
+    should be used in independent of 
+    """ 
+    # load in the file 
+    fraction = sc.read_csv(csv_path, first_column_names = True)
+    
+    # ensure numpy array in float 32:
+    if not (isinstance(fraction.X, np.ndarray) and fraction.X.dtype == np.float32):
+        fraction.X = np.asarray(fraction.X, dtype=np.float32)
+    
+    # write out to h5ad:
+    fraction.write(h5ad_path)
+    
 def normalize(
     h5ad_obj,
     method : str = 'inverse',

@@ -94,14 +94,14 @@ column.split = c(
 col.fun <- colorRamp2(
     c(
         0,
-        1
+        0.7
         ),
     c('white', '#de2d26')
     );
 heatmap.legend.param <- list(
     at = c(
         0,
-        1
+        0.7
         )
     );
 

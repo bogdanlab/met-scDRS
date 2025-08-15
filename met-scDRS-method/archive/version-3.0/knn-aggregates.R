@@ -37,11 +37,11 @@ print(str(opts))
 
 # for test:
 # meta_data_path <- '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/meta_data.csv'
-# fraction <- '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/v2.0/processed-met-scDRS-mcg.csv'
+# fraction <- '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/met_scdrs_processed-75K-subset-mcg-v1_1_1_rc1.csv'
 # dr1 <- 'UMAP_1'
 # dr2 <- 'UMAP_2'
-# neibour_num <- 10
-# threads <- 4
+# neibour_num <- 5
+# threads <- 5
 
 # load in the data:
 meta <- read.csv(

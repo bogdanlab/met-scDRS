@@ -9,7 +9,7 @@ require(circlize);
 
 # load in data:
 significance.matrix <- read.table(
-    file = '/u/home/l/lixinzhe/project-geschwind/plot/2025-08-01-revision-GSE215353-production-fraction-mch-cell-type-significance-proportion.csv',
+    file = '/u/home/l/lixinzhe/project-geschwind/plot/2025-08-07-v1.1rc-GSE215353-subset-fraction-mcg-cell-type-significance-proportion.csv',
     sep = ',',
     row.names = 1,
     header = TRUE,
@@ -105,6 +105,16 @@ heatmap.legend.param <- list(
         )
     );
 
+# select some traits for publication to visualize
+publication.traits <- c(
+    'Schizophrenia_Pardinas2018',
+    'MDD_Howard2019',
+    'BIP_Mullins2021',
+    'EDU_YEARS',
+    'SWB',
+    'Alzheimers_Jansen2019'
+    )
+
 # create heatmap:
 plot <- Heatmap(
     as.matrix(significance.matrix)[publication.traits, cell.type.order],
@@ -128,7 +138,7 @@ heatmap.width <- convertX(ComplexHeatmap:::width(plot.size), "inch", valueOnly =
 heatmap.height <- convertY(ComplexHeatmap:::height(plot.size), "inch", valueOnly = TRUE)
 
 # use the measured width and height for drawing:
-output.path <- paste0('/u/home/l/lixinzhe/project-geschwind/plot/', system.date, '-cell-type-brain-traits-proportion.png')
+output.path <- paste0('/u/home/l/lixinzhe/project-geschwind/plot/', system.date, '-CpG-cell-type-brain-traits-proportion.png')
 png(
     filename = output.path,
     width = heatmap.width,
