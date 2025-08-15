@@ -45,4 +45,12 @@ for gs_file in ${input_gs_dir}KC_75_traits_split.gs*; do
 
 done
 
-### visualize for proportion heatmap:
+current_date=$(date +"%Y-%m-%d")
+
+### proportion heatmap plot #######################################################################
+# plot for MCH
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/GSE132489-scDRS/v1.1-rc-subset/analysis/visualization/proportion_heatmap_pipeline.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges132489_full/mean_var_length_arcsine/" \
+    --meta_data '/u/project/geschwind/lixinzhe/data/Liu_et_al_2021_methylation_gse132489/processed-full/all_meta_with_rowSum.csv' \
+    --modality "full_mean_var_length_arcsine_regress" \
+    --p_cutoff 0.1
