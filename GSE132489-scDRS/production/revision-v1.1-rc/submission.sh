@@ -9,7 +9,7 @@
 #$ -l h_rt=24:00:00,h_data=10G
 ## Modify the parallel environment
 ## and the number of cores as needed:
-#$ -pe shared 7
+#$ -pe shared 4
 # Email address to notify
 #$ -M lxzjason@gmail.com
 # Notify when
