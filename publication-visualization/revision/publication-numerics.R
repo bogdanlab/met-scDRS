@@ -94,8 +94,79 @@ write.table(
 result_df$cell_class = meta$X_CellClass[match(rownames(result_df), meta$X_MajorType)]
 
 ###########################################################################################
-######                          load in the average mch                              ######
+######          divergent and convergent on cell types with brain traits             ######
 ###########################################################################################
+# load in libraries:
+library(ggplot2)
+library(data.table)
+library(reshape2)
+library(dplyr)
+
+# specify paths:
+scDRS.directory <- '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/';
+meta.data.path <- '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/meta_data.csv';
+trait.info.path <- '/u/home/l/lixinzhe/project-geschwind/data/tait-classification.txt';
+output.dir <- '/u/home/l/lixinzhe/project-geschwind/plot/'
+system.date <- Sys.Date()
+
+# read meta:
+meta <- read.csv(
+    header = TRUE,
+    row.names = 1,
+    file = meta.data.path
+    );
+
+# read trait info:
+trait.info <- read.table(file = trait.info.path, sep = '\t', header = TRUE);
+
+# load in data:
+score.files <- list.files(scDRS.directory, pattern = '\\.score.gz', full.names = TRUE);
+risk.score <- vector('list', length = length(score.files));
+names(risk.score) <- score.files;
+
+# create progress bar:
+cat('loading scores \n')
+pb <- progress::progress_bar$new(
+    format = "[:bar] (:current/:total)",
+    total = length(score.files),
+    clear = FALSE
+    );
+
+# read into the empty list:
+for (result in score.files) {
+    risk.score[[result]] <- fread(
+        file = result,
+        sep = '\t',
+        header = TRUE,
+        stringsAsFactors = FALSE
+        );
+    risk.score[[result]] <- data.frame(risk.score[[result]], row.names = 1)
+    pb$tick()
+    }
+
+# simplify list names:
+list.names <- gsub(scDRS.directory, '', score.files);
+list.names <- gsub('/', '', list.names);
+list.names <- gsub('\\.score.gz', '', list.names);
+
+# rename the list names:
+names(risk.score) <- list.names;
+
+# for each of the trait, get fdr corrected p values:
+trait.info$number_significant = NA
+for (result in names(risk.score)) {
+    # get the adj_pval:
+    adj_pval = p.adjust(risk.score[[result]][, 'pval'], method = 'fdr')
+    risk.score[[result]]$adj_pval = adj_pval
+    
+    # identify the adjusted pval;
+    significant_cell = rownames(risk.score[[result]])[risk.score[[result]]$adj_pval < 0.1]
+    trait.info[match(result, trait.info$Trait_Identifier), 'number_significant'] = length(significant_cell)
+    }
+
+# summarize by category:
+trait.info %>% group_by(Category) %>% summarize(median = median(number_significant), sd = sd(number_significant))
+
 
 ###########################################################################################
 ######                                  CpG methylation                              ######

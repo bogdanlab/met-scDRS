@@ -236,6 +236,10 @@ for (cell_type in unique(meta$X_MajorType)){
             );
         draw(plot, heatmap_legend_side = 'left', padding = unit(c(10, 10, 10, 70), "mm"));
         dev.off();
+        
+        # also generate the supplementary tables:
+        table.path <- paste0('/u/home/l/lixinzhe/project-geschwind/plot/subtype-analysis/', system.date, '-', gsub('/','-', cell_type), '-subtype-brain-traits-proportion.tsv')
+        write.table(significance.matrix[publication.traits, cell.type.order], file=table.path, sep = '\t')
         }
     }
    
