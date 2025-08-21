@@ -169,10 +169,54 @@ trait.info %>% group_by(Category) %>% summarize(median = median(number_significa
 
 
 ###########################################################################################
-######                                  CpG methylation                              ######
+######                                    GO analysis                                ######
 ###########################################################################################
+library(clusterProfiler);
+source('/u/home/l/lixinzhe/project-github/met-scDRS/spell-book/go_pathway_counter.R')
 
+# load in the trait info:
+trait.info.path <- '/u/home/l/lixinzhe/project-geschwind/data/tait-classification.txt';
+trait.info <- read.table(file = trait.info.path, sep = '\t', header = TRUE);
 
+# read in the go terms:
+go_results = list.files('/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/GO/', pattern = '*_readable_go_results.rds')
+go_terms = NULL
+trait.info$sig_pathway = NA
+rownames(trait.info) = trait.info$Trait_Identifier
+
+for (result in go_results){
+    file_path = paste0('/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/GO/', result)
+    # load in the GO result:
+    trait = gsub('_readable_go_results.rds', '', result)
+    go_terms[[trait]] = readRDS(file_path)
+
+    # count the number of significant terms in each trait:
+    trait.info[trait, 'sig_pathway'] = sum(go_terms[[trait]]@result$p.adjust < 0.05)
+
+}
+print(trait.info %>% group_by(Category) %>% summarise(average = mean(sig_pathway)))
+
+pathway_count_mat = pathway_count(go_terms, trait.info)
+
+# common pathways among brain traits:
+common_paths = tail(names(sort(colSums(pathway_count_mat[[1]]))))
+print(tail(sort(colSums(pathway_count_mat[[1]]))))
+
+# grab out the more specific pathways:
+specific = colnames(pathway_count_mat[[1]])[4 == colSums(pathway_count_mat[[1]])]
+print('more specific pathways and diseases')
+print(pathway_count_mat[[1]][, specific])
+
+bipolar_significant_pathways = colnames(pathway_count_mat[[1]])[pathway_count_mat[[1]]['PASS_BIP_Mullins2021',] > 0]
+cat(paste0('significant pathways in bipolar: ', bipolar_significant_pathways), '\n')
+
+# grab out the ion channel related pathways:
+print('channel related:')
+print(pathway_count_mat[[1]][,grep('CHANNEL', colnames(pathway_count_mat[[1]]))])
+
+# output the pathway count matrix for both brain and non brain as our results:
+write.table(pathway_count_mat[[1]], sep = '\t', file = paste0('/u/home/l/lixinzhe/project-geschwind/plot/', Sys.Date(), '-brain-trait-signficant-pathways.txt'))
+write.table(pathway_count_mat[[2]], sep = '\t', file = paste0('/u/home/l/lixinzhe/project-geschwind/plot/', Sys.Date(), '-non-brain-trait-signficant-pathways.txt'))
 
 
 ###########################################################################################
