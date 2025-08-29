@@ -51,7 +51,7 @@ visual.cortex.cell <- rownames(meta)[meta$tissue == 'primary visual cortex']
 
 # first we wish to plot the middle and inferior temporal gyrus met-scDRS score for significant cell
 full.score$fdr <- p.adjust(full.score$pval, method = 'fdr')
-significant.cell <- rownames(full.score)[full.score$fdr < 1]
+significant.cell <- rownames(full.score)
 insignificant.cell <- setdiff(rownames(full.score), significant.cell)
 
 # generate plot df:
@@ -113,6 +113,9 @@ png(
 print(gplot)
 dev.off();
 
+print('average across selected brain regions among L2/3-IT')
+print(plot.df %>% group_by(tissue) %>% summarize(average = mean(score)))
+
 ###########################################################################################
 ######                                    for MGC                                    ######
 ###########################################################################################
@@ -126,7 +129,7 @@ visual.cortex.cell <- rownames(meta)[meta$tissue == 'primary visual cortex']
 
 # first we wish to plot the middle and inferior temporal gyrus met-scDRS score for significant cell
 full.score$fdr <- p.adjust(full.score$pval, method = 'fdr')
-significant.cell <- rownames(full.score)[full.score$fdr < 1]
+significant.cell <- rownames(full.score)
 insignificant.cell <- setdiff(rownames(full.score), significant.cell)
 
 # generate plot df:
@@ -188,6 +191,9 @@ png(
 print(gplot)
 dev.off();
 
+print('average across selected brain regions among MGC cells')
+print(plot.df %>% group_by(tissue) %>% summarize(average = mean(score)))
+
 ###########################################################################################
 ######                                        For OPC                                ######
 ###########################################################################################
@@ -202,7 +208,7 @@ visual.cortex.cell <- rownames(meta)[meta$tissue == 'primary visual cortex']
 
 # first we wish to plot the middle and inferior temporal gyrus met-scDRS score for significant cell
 full.score$fdr <- p.adjust(full.score$pval, method = 'fdr')
-significant.cell <- rownames(full.score)[full.score$fdr < 1]
+significant.cell <- rownames(full.score)
 insignificant.cell <- setdiff(rownames(full.score), significant.cell)
 
 # generate plot df:
@@ -263,3 +269,6 @@ png(
     );
 print(gplot)
 dev.off();
+
+print('average across selected brain regions among OPC cells')
+print(plot.df %>% group_by(tissue) %>% summarize(average = mean(score)))

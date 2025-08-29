@@ -307,7 +307,7 @@ write.table(
     );
 
 # load in the file and calculate the average of average:
-selected.plot.df = read.table(file = '/u/home/l/lixinzhe/project-geschwind/plot/2025-01-09-region-cell-type-zscore-selected-heatmap.csv', sep =',')
+selected.plot.df = read.table(file = '/u/home/l/lixinzhe/project-geschwind/plot/2025-08-29-region-cell-type-zscore-selected-heatmap-legend.csv', sep =',')
 mean(as.matrix(selected.plot.df)[c('prefrontal-cortex','Brodmann-(1909)-area-46', 'inferior-temporal-gyrus','middle-temporal-gyrus'),], na.rm = T) # 1.072
 sd(as.matrix(selected.plot.df)[c('prefrontal-cortex','Brodmann-(1909)-area-46', 'inferior-temporal-gyrus','middle-temporal-gyrus'),], na.rm = T) # 0.673
 
