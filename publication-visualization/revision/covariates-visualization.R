@@ -70,7 +70,16 @@ proportion.matrix <- read.table(
 
 ### PROCESS #######################################################################################
 # compute the correlation beteen mch expression and proportion of significance:
-# on all cells:
+# compute the correlation beteen mch expression and met-scDRS:
+cor.result <- matrix(NA, nrow = length(risk.score), ncol = 1)
+colnames(cor.result) <- c('rho')
+rownames(cor.result) <- names(risk.score)
+for (disease in names(risk.score)){
+    cor.result[disease, 'rho'] <- cor(meta$log_scale_rowsum, risk.score[[disease]]$zscore, method = 'spearman')
+}
+print(cor.result['PASS_MDD_Howard2019',])
+
+
 summarized.mch <- meta %>% group_by(X_MajorType) %>% summarize(avg_mch = mean(rowSum_centered)) %>% data.frame(row.names = 1)
 # on excitatory neurons:
 cor.result <- matrix(NA, nrow = nrow(proportion.matrix), ncol = 2)
@@ -128,6 +137,27 @@ combined_plot <- plot_grid(plotlist = gplot.list, ncol = 4)
 print(combined_plot)
 dev.off();
 
+# create the supplementary table
+supp_table <- data.frame(Reduce('rbind', plot.df.list))
+supp_table$key = rep(names(plot.df.list), each = 3)
+
+# pivot from longer to wider
+supp_table <- data.frame(tidyr::pivot_wider(
+    supp_table,
+    names_from = donor,
+    values_from = count_FDR,
+    names_prefix = 'batch_'
+    ))
+    
+# output the supplementary table:
+write.table(
+    supp_table,
+    sep = ',' ,
+    row.names = FALSE,
+    col.names = TRUE,
+    file = paste0('/u/home/l/lixinzhe/project-geschwind/plot/', Sys.Date(), '-supplementary-table-for-donor.csv')
+    )
+
 ### also do this for batch:
 plot.df.list <- gplot.list <- NULL
 for (result in names(risk.score)){
@@ -161,3 +191,24 @@ png(
 combined_plot <- plot_grid(plotlist = gplot.list, ncol = 4)
 print(combined_plot)
 dev.off();
+
+# create the supplementary table
+supp_table <- data.frame(Reduce('rbind', plot.df.list))
+supp_table$key = rep(names(plot.df.list), each = 2)
+
+# pivot from longer to wider
+supp_table <- data.frame(tidyr::pivot_wider(
+    supp_table,
+    names_from = batch,
+    values_from = count_FDR,
+    names_prefix = 'batch_'
+    ))
+    
+# output the supplementary table:
+write.table(
+    supp_table,
+    sep = ',' ,
+    row.names = FALSE,
+    col.names = TRUE,
+    file = paste0('/u/home/l/lixinzhe/project-geschwind/plot/', Sys.Date(), '-supplementary-table-for-sequencing-batch.csv')
+    )

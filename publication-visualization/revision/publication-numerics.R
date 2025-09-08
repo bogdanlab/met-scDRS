@@ -174,6 +174,11 @@ trait.info %>% group_by(Category) %>% summarize(median = median(number_significa
 library(clusterProfiler);
 source('/u/home/l/lixinzhe/project-github/met-scDRS/spell-book/go_pathway_counter.R')
 
+# read in the correlation results:
+score.mch.cor = readRDS('/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/score_mch_correlation.rds')
+print('for MDD, here is the most correlated genes methylation to met-scDRS')
+tail(sort(score.mch.cor[[1]]))
+
 # load in the trait info:
 trait.info.path <- '/u/home/l/lixinzhe/project-geschwind/data/tait-classification.txt';
 trait.info <- read.table(file = trait.info.path, sep = '\t', header = TRUE);
@@ -206,6 +211,13 @@ print(tail(sort(colSums(pathway_count_mat[[1]]))))
 specific = colnames(pathway_count_mat[[1]])[4 == colSums(pathway_count_mat[[1]])]
 print('more specific pathways and diseases')
 print(pathway_count_mat[[1]][, specific])
+
+print('for postsynaptic specialization:')
+print(pathway_count_mat[[1]][,'GOCC_POSTSYNAPTIC_SPECIALIZATION'])
+
+print('central nervous system developmental pathway:')
+print(pathway_count_mat[[1]][,'GOBP_CENTRAL_NERVOUS_SYSTEM_DEVELOPMENT'])
+
 
 bipolar_significant_pathways = colnames(pathway_count_mat[[1]])[pathway_count_mat[[1]]['PASS_BIP_Mullins2021',] > 0]
 cat(paste0('significant pathways in bipolar: ', bipolar_significant_pathways), '\n')
