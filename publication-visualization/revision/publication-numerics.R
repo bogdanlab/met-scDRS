@@ -183,6 +183,10 @@ score.mch.cor = readRDS('/u/home/l/lixinzhe/project-geschwind/port/scratch/revis
 print('for MDD, here is the most correlated genes methylation to met-scDRS')
 tail(sort(score.mch.cor[[1]]))
 
+# score.mch.cor = readRDS(paste0('/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/GO/PASS_MDD_Howard2019_score_mch_correlation.rds'))
+# print('for MDD, here is the most correlated genes methylation to met-scDRS')
+# tail(sort(score.mch.cor[[1]]))
+
 # load in the trait info:
 trait.info.path <- '/u/home/l/lixinzhe/project-geschwind/data/tait-classification.txt';
 trait.info <- read.table(file = trait.info.path, sep = '\t', header = TRUE);
@@ -239,7 +243,7 @@ write.table(pathway_count_mat[[2]], sep = '\t', file = paste0('/u/home/l/lixinzh
 ######                              robustness analysis                              ######
 ###########################################################################################
 # load in the null tests:
-p_matrix = read.table('/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse215353_full/arcsine-null/PASS_MDD_Howard2019_calibration_p_metric.txt', sep = '\t', header = T)
+p_matrix = read.table('/u/home/l/lixinzhe/project-geschwind/plot/archive_png_before_feb2_2026/met_scdrs_revision/gse215353_full/arcsine-null/PASS_MDD_Howard2019_calibration_p_metric.txt', sep = '\t', header = T)
 bad_nulls_num = sum(p_matrix$ctrl_norm_adjusted < 0.1)
 cat(bad_nulls_num, 'nulls are significantly not normal in MDD \n')
 
@@ -262,11 +266,41 @@ mouse_meta = read.table(
 significant_cells = rownames(mouse_mdd_scdrs)[mouse_mdd_scdrs$fdr < 0.1]
 table(mouse_meta[significant_cells, 'MajorType']) / length(significant_cells) * 100
 
+# look at correlation of met-scDRS between MDD gene set:
+library(ggplot2)
+library(data.table)
+library(dplyr)
+
+# load in the files
+mdd_2025 = data.frame(
+    fread(
+        file = '/u/home/l/lixinzhe/project-geschwind/data/MDD-GWAS/met_scdrs/out/PGC_MDD_2025.score.gz',
+        sep = '\t',
+        data.table = FALSE,
+        header = TRUE
+        ),
+    row.names = 1
+    )
+
+# load in the Howard et al GWAS:
+mdd_howard = data.frame(
+    fread(
+        file = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/v1.1/ges215353_full/mean_var_length_arcsine/PASS_MDD_Howard2019.score.gz',
+        sep = '\t',
+        data.table = FALSE,
+        header = TRUE
+        ),
+    row.names = 1
+    )
+
+print('spearman correlation between mdd_2025 and howard et al GWAS')
+cor(mdd_2025$zscore, mdd_howard$zscore, method='spearman')
+
 ### null-significance.R ###########################################################################
-arcsine_dir = "/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_30K/normalization/arcsine/null_distribution/"
-no_norm_dir = "/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_30K/normalization/untransformed/null_distribution/"
-logit_dir = "/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_30K/normalization/logit/null_distribution/"
-library_size = "/u/home/l/lixinzhe/project-geschwind/plot/met_scdrs_revision/gse132489_30K/normalization/library/null_distribution/"
+arcsine_dir = "/u/home/l/lixinzhe/project-geschwind/plot/archive_png_before_feb2_2026/met_scdrs_revision/gse132489_30K/normalization/arcsine/null_distribution/"
+no_norm_dir = "/u/home/l/lixinzhe/project-geschwind/plot/archive_png_before_feb2_2026/met_scdrs_revision/gse132489_30K/normalization/untransformed/null_distribution/"
+logit_dir = "/u/home/l/lixinzhe/project-geschwind/plot/archive_png_before_feb2_2026/met_scdrs_revision/gse132489_30K/normalization/logit/null_distribution/"
+library_size = "/u/home/l/lixinzhe/project-geschwind/plot/archive_png_before_feb2_2026/met_scdrs_revision/gse132489_30K/normalization/library/null_distribution/"
 
 # directories:
 dirs = c(arcsine_dir, no_norm_dir, logit_dir, library_size)
