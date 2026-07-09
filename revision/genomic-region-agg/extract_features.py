@@ -101,27 +101,44 @@ genes_df = genes_df.loc[genes_df.gene_type == 'protein_coding', ]
 ###########################################################################################
 ######                            Create promoter bed file                           ######
 ###########################################################################################
-# create promoter:
 def get_promoter_bed(genes_df, tss_start_flank = 2000, tss_end_flank = 500):
-    positive_genes = genes_df.loc[genes_df['strand'] == '+', :].copy()
-    positive_tss = positive_genes["start"].copy()
-    positive_genes['start'] = positive_tss - tss_start_flank
-    positive_genes['end'] = positive_tss + tss_end_flank
+    df = genes_df.copy()
+    df["start"] = df["start"].astype(int)
+    df["end"] = df["end"].astype(int)
     
-    # now do the reverse for negative strand genes:
-    negative_genes = genes_df.loc[genes_df['strand'] == '-', :].copy()
-    negative_tss = negative_genes["end"].copy()
-    negative_genes['start'] = negative_tss - tss_end_flank
-    negative_genes['end'] = negative_tss + tss_start_flank
+    promoter_rows = []
+    grouped = df.groupby(["gene_name", "chrom", "strand"], sort=False)
     
-    # piece the two together:
-    promoter_bed = pd.concat([positive_genes, negative_genes], axis = 0)
-    
-    # Avoid negative genomic coordinates
-    promoter_bed["start"] = promoter_bed["start"].clip(lower=0)
-    
-    # keep bed sorted:
-    promoter_bed = promoter_bed.sort_values(["chrom", "start", "end"])
+    for (gene_name, chrom, strand), sub in grouped:
+        gene_id = sub["gene_id"].iloc[0]
+        if strand == "+":
+            # TSS is the most upstream/smallest start
+            tss = sub["start"].min()
+            promoter_start = tss - tss_start_flank
+            promoter_end = tss + tss_end_flank
+
+        elif strand == "-":
+            # TSS is the largest end for negative strand
+            tss = sub["end"].max()
+            promoter_start = tss - tss_end_flank
+            promoter_end = tss + tss_start_flank
+        
+        else:
+            continue
+        promoter_start = max(promoter_start, 0)
+        promoter_rows.append({
+            "chrom": chrom,
+            "start": promoter_start,
+            "end": promoter_end,
+            "gene_id": gene_id,
+            "gene_name": gene_name,
+            "strand": strand,
+            "tss": tss,
+        })
+    promoter_bed = pd.DataFrame(promoter_rows)
+    promoter_bed = promoter_bed.sort_values(
+        ["chrom", "start", "end", "gene_name"]
+    ).reset_index(drop=True)
     promoter_bed = promoter_bed[["chrom", "start", "end", "gene_name"]]
     return promoter_bed
 
@@ -138,20 +155,20 @@ def get_exon_bed(df, exon_id_col="gene_exon_id", exon_order="genomic"):
     df["end"] = df["end"].astype(int)
     
     # we first sort the df:
-    df = df.drop_duplicates(["chrom", "start", "end", "gene_id", "strand"])
-    df = df.sort_values(["gene_id", "chrom", "strand", "start", "end"])
+    df = df.drop_duplicates(["chrom", "start", "end", "gene_name", "strand"])
+    df = df.sort_values(["gene_name", "chrom", "strand", "start", "end"])
     
     # next we can querry each row:
     merged_rows = []
-    grouped = df.groupby(["gene_id", "chrom", "strand"], sort=False)
+    grouped = df.groupby(["gene_name", "chrom", "strand"], sort=False)
     
-    for (gene_id, chrom, strand), sub in tqdm(
+    for (gene_name, chrom, strand), sub in tqdm(
         grouped,
         total=grouped.ngroups,
         desc="Merging exon intervals"
     ):
         # getting first instance of the gene name:
-        gene_name = sub["gene_name"].iloc[0]
+        gene_id = sub["gene_id"].iloc[0]
         current_start = None
         current_end = None
         
@@ -199,7 +216,12 @@ def get_exon_bed(df, exon_id_col="gene_exon_id", exon_order="genomic"):
     
     # Assign exon numbers within each gene
     output_rows = []
-    for gene_id, sub in merged.groupby("gene_id", sort=False):
+    grouped_merged = merged.groupby(["gene_name", "chrom", "strand"], sort=False)
+    for (gene_name, chrom, strand), sub in tqdm(
+        grouped_merged,
+        total=grouped_merged.ngroups,
+        desc="Assigning exon IDs"
+        ):
         strand = sub["strand"].iloc[0]
         
         if exon_order == "genomic":
@@ -228,11 +250,19 @@ def get_exon_bed(df, exon_id_col="gene_exon_id", exon_order="genomic"):
     
     # Final BED sorting
     exon_union = exon_union.sort_values(
-        ["chrom", "start", "end", "gene_id"]
+        ["chrom", "start", "end", "gene_name"]
     ).reset_index(drop=True)
     return exon_union
 
-
+gene_name_check = (
+    exons_df.groupby("gene_name")
+    .agg(
+        n_gene_ids=("gene_id", "nunique"),
+        n_chroms=("chrom", "nunique"),
+        n_strands=("strand", "nunique")
+    )
+    .query("n_gene_ids > 1 or n_chroms > 1 or n_strands > 1")
+)
 exon_union = get_exon_bed(exons_df)
 
 # keep only the chromosome 1:22
@@ -268,19 +298,19 @@ def get_intron_bed(
     exons["start"] = exons["start"].astype(int)
     exons["end"] = exons["end"].astype(int)
     
-    genes = genes.drop_duplicates(["chrom", "start", "end", "gene_id", "strand"])
-    exons = exons.drop_duplicates(["chrom", "start", "end", "gene_id", "strand"])
+    genes = genes.drop_duplicates(["gene_name", "chrom", "strand"]).copy()
+    exons = exons.drop_duplicates(["chrom", "start", "end", "gene_name", "strand"])
     
     # Sort
-    genes = genes.sort_values(["gene_id", "chrom", "strand", "start", "end"])
-    exons = exons.sort_values(["gene_id", "chrom", "strand", "start", "end"])
+    genes = genes.sort_values(["gene_name", "chrom", "strand", "start", "end"])
+    exons = exons.sort_values(["gene_name", "chrom", "strand", "start", "end"])
     
     intron_rows = []
     
     # Group exons for lookup
     exon_groups = {
         key: sub.sort_values(["start", "end"]).copy()
-        for key, sub in exons.groupby(["gene_id", "chrom", "strand"], sort=False)
+        for key, sub in exons.groupby(["gene_name", "chrom", "strand"], sort=False)
     }
     
     for gene in tqdm(genes.itertuples(index=False), total = len(genes), desc = 'Getting introns'):
@@ -292,7 +322,7 @@ def get_intron_bed(
         strand = gene.strand
         
         # get the key:
-        key = (gene_id, chrom, strand)
+        key = (gene_name, chrom, strand)
         if key not in exon_groups:
             continue
         
@@ -325,9 +355,10 @@ def get_intron_bed(
         return intron_df
     
     output_rows = []
-    for gene_id, sub in tqdm(
-        intron_df.groupby("gene_id", sort=False),
-        total=intron_df["gene_id"].nunique(),
+    grouped_merged = intron_df.groupby(["gene_name", "chrom", "strand"], sort=False)
+    for (gene_name, chrom, strand), sub in tqdm(
+        grouped_merged,
+        total=grouped_merged.ngroups,
         desc="Assigning intron IDs"
     ):
         strand = sub['strand'].iloc[0]
@@ -357,7 +388,7 @@ def get_intron_bed(
     
     intron_df = pd.concat(output_rows, ignore_index=True)
     intron_df = intron_df.sort_values(
-        ["chrom", "start", "end", "gene_id"]
+        ["chrom", "start", "end", "gene_name"]
     ).reset_index(drop=True)
     return intron_df
 
@@ -368,6 +399,12 @@ intron_bed.columns = ['#chr', 'start', 'end', 'gene']
 ###########################################################################################
 ######                                    OUTPUT                                     ######
 ###########################################################################################
+# finalize the files:
+print(promoter_bed["gene"].duplicated().sum())
+print(exon_bed["gene"].duplicated().sum())
+print(intron_bed["gene"].duplicated().sum())
+
+
 # output these as bed file:
 exon_bed.to_csv(
     exon_out,
