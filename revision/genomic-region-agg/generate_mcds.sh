@@ -1,17 +1,27 @@
 #!/bin/bash
-#$ -o job$TASK_ID
 #$ -cwd
+# error = Merged with joblog
+#$ -j y
+#$ -o /u/scratch/l/lixinzhe/job-log/joblog.$JOB_ID
 #$ -N makemcds
-#$ -l h_rt=2:00:00,h_data=6G
+#$ -l h_rt=23:59:00,h_data=6G
 #$ -pe shared 24
 # usage() { echo "Usage: bash $0 -a allc_list_file -o output_prefix -b bin_size -h current_directory_path" 1>&2; exit 1; }
-
-cd $wd
-echo "CWD: $PWD"
 
 # echo job info on joblog:
 echo "Job $JOB_ID started on:   " `hostname -s`
 echo "Job $JOB_ID started on:   " `date `
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: qsub generate_mcds.sh <allc_table> <output_path>"
+    exit 1
+fi
+
+allc_table="$1"
+output_path="$2"
+
+echo "ALLC table: $allc_table"
+echo "Output path: $output_path"
 echo " "
 
 # load the job environment:
@@ -23,9 +33,11 @@ conda activate allcools
 
 # head -n 3 /u/project/jflint/heffel/BICAN3/Tien10k/allc_table.tsv > /u/home/l/lixinzhe/project-geschwind/port/scDRS/tester/allc_table.tsv
 
+mkdir -p "$(dirname "$output_path")"
+
 allcools generate-dataset \
---allc_table /u/home/l/lixinzhe/project-geschwind/port/scDRS/tester/allc_table.tsv \
---output_path /u/project/geschwind/lixinzhe/data/GSE215353/Tien10k/Tien10k_tester_07092026.mcds \
+--allc_table "$allc_table" \
+--output_path "$output_path" \
 --chrom_size_path /u/project/cluo/heffel/BICAN/ref/chromsizes.tsv \
 --obs_dim cell \
 --cpu 16 \
@@ -35,7 +47,8 @@ allcools generate-dataset \
 --regions exon /u/home/l/lixinzhe/project-geschwind/port/scDRS/gtf_info/feature_out/exon_merged_segments.bed \
 --quantifiers promoter count CGN,CHN \
 --quantifiers intron count CGN,CHN \
---quantifiers exon count CGN,CHN \
+--quantifiers exon count CGN,CHN
+
 # --quantifiers chrom5k hypo-score CGN cutoff=0.9
 #--regions chrom5k 5000 \
 ##--output_path /u/project/cluo/heffel/snm3Cseq_maptest/4brainreg_02192024.mcds \
