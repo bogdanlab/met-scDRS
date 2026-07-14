@@ -37,6 +37,10 @@ library(ComplexHeatmap)
 # define paths:
 date <- Sys.Date()
 
+# load in the trait info:
+trait.info.path <- '/u/home/l/lixinzhe/project-geschwind/data/tait-classification.txt';
+trait.info <- read.table(file = trait.info.path, sep = '\t', header = TRUE);
+
 # load in the data:
 meta <- read.csv(
     header = TRUE,
@@ -147,33 +151,37 @@ write.table(
     row.names = TRUE,
     col.names = TRUE
     );
-    
-# grab out some publication traits:
-publication.traits <- c(
-    'UKB_460K.blood_RBC_DISTRIB_WIDTH',
-    'UKB_460K.blood_MONOCYTE_COUNT',
-    'UKB_460K.blood_LYMPHOCYTE_COUNT',
-    'PASS_Rheumatoid_Arthritis',
-    'PASS_Multiple_sclerosis',
-    'PASS_IBD_deLange2017',
-    'UKB_460K.disease_ASTHMA_DIAGNOSED',
-    'UKB_460K.disease_HYPOTHYROIDISM_SELF_REP',
-    'UKB_460K.disease_AID_ALL',
-    'PASS_Alzheimers_Jansen2019',
-    'PASS_Schizophrenia_Pardinas2018',
-    'PASS_MDD_Howard2019',
-    'PASS_BIP_Mullins2021',
-    'UKB_460K.cov_EDU_COLLEGE',
-    'UKB_460K.body_BMIz',
-    'UKB_460K.cov_SMOKING_STATUS',
-    'UKB_460K.biochemistry_Triglycerides',
-    'UKB_460K.biochemistry_Testosterone_Male',
-    'UKB_460K.body_HEIGHTz',
-    'UKB_460K.bmd_HEEL_TSCOREz',
-    'UKB_460K.bp_SYSTOLICadjMEDz',
-    'PASS_Type_2_Diabetes',
-    'UKB_460K.biochemistry_Glucose'
-    );
+
+
+trait.class <- trait.info$Category[match(rownames(significance.matrix), trait.info$Trait_Identifier)];
+publication.traits <- rownames(significance.matrix)[trait.class == 'brain'];
+
+# # grab out some publication traits:
+# publication.traits <- c(
+#     'UKB_460K.blood_RBC_DISTRIB_WIDTH',
+#     'UKB_460K.blood_MONOCYTE_COUNT',
+#     'UKB_460K.blood_LYMPHOCYTE_COUNT',
+#     'PASS_Rheumatoid_Arthritis',
+#     'PASS_Multiple_sclerosis',
+#     'PASS_IBD_deLange2017',
+#     'UKB_460K.disease_ASTHMA_DIAGNOSED',
+#     'UKB_460K.disease_HYPOTHYROIDISM_SELF_REP',
+#     'UKB_460K.disease_AID_ALL',
+#     'PASS_Alzheimers_Jansen2019',
+#     'PASS_Schizophrenia_Pardinas2018',
+#     'PASS_MDD_Howard2019',
+#     'PASS_BIP_Mullins2021',
+#     'UKB_460K.cov_EDU_COLLEGE',
+#     'UKB_460K.body_BMIz',
+#     'UKB_460K.cov_SMOKING_STATUS',
+#     'UKB_460K.biochemistry_Triglycerides',
+#     'UKB_460K.biochemistry_Testosterone_Male',
+#     'UKB_460K.body_HEIGHTz',
+#     'UKB_460K.bmd_HEEL_TSCOREz',
+#     'UKB_460K.bp_SYSTOLICadjMEDz',
+#     'PASS_Type_2_Diabetes',
+#     'UKB_460K.biochemistry_Glucose'
+#     );
 
 cell.types = unique(meta[, group.index])
 excitatory = sort(cell.types[grep('^Exc', cell.types)])
@@ -236,11 +244,11 @@ if ((group.index %in% c('newL1', 'newL2', 'newL3')) & all(publication.traits %in
 
     # plot out the heatmap:
     # define split pattern:
-    row.split = c(
-        rep('Blood/immune', 9),
-        rep('Brain', 7),
-        rep('Others', 7)
-        );
+    # row.split = c(
+    #     rep('Blood/immune', 9),
+    #     rep('Brain', 7),
+    #     rep('Others', 7)
+    #     );
     column.split = c(
         rep('Excitatory', length(excitatory)),
         rep('Inhibitory', length(inhibitory)),
@@ -258,7 +266,7 @@ if ((group.index %in% c('newL1', 'newL2', 'newL3')) & all(publication.traits %in
         height = unit(10 * length(publication.traits),"mm"),
         column_names_gp = grid::gpar(fontsize = 15),
         row_names_gp = grid::gpar(fontsize = 15),
-        row_split = row.split,
+        # row_split = row.split,
         column_split = column.split,
         heatmap_legend_param = heatmap.legend.param
         );
