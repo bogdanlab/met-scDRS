@@ -29,7 +29,285 @@ def convert(csv_path, h5ad_path):
     
     # write out to h5ad:
     fraction.write(h5ad_path)
+
+def qc_h5ad(
+    adata,
+    cell_cov_column:str = 'total_cov',
+    cell_mc_column: str = 'total_mc',
+    cell_percent_column: str = 'global_frac',
+    gene_cov_column: str = 'total_cov',
+    gene_mc_column: str = 'total_mc',
+    gene_percent_column: str = 'global_frac',
+    mad_coverage_filter: bool = True,
+    min_gene_coverage: int = 100000,
+    n_mads: float = 4.0,
+    verbose = True
+    ):
+    """
+
+    Preprocess a gene-by-cell methylation AnnData object.
+
+    Expected structure
+    ------------------
+    adata.X
+        Cell-by-gene methylation fractions.
+    adata.obs[cell_cov_column]
+        Total coverage per cell
+    adata.var[gene_cov_column]
+        Total coverage per gene
     
+    Filtering
+    ---------
+    1. Identify and remove low-coverage cells.
+    2. Identify and remove low-coverage genes.
+    """
+    
+    ###########################################################################################
+    ######                                    Check inputs                               ######
+    ###########################################################################################
+    # simply print out each of the options:
+    if verbose:
+        print("QC with the following parameters:")
+        print(f"  cell_cov_column:       {cell_cov_column}")
+        print(f"  cell_mc_column:        {cell_mc_column}")
+        print(f"  cell_percent_column:   {cell_percent_column}")
+        print(f"  gene_cov_column:       {gene_cov_column}")
+        print(f"  gene_mc_column:        {gene_mc_column}")
+        print(f"  gene_percent_column:   {gene_percent_column}")
+        print(f"  mad_coverage_filter:   {mad_coverage_filter}")
+        print(f"  n_mads:                {n_mads}")
+        print(f"  min_gene_coverage:     {min_gene_coverage}")
+        print("\n------------------")
+        print("starting QC")
+        
+    
+    # validate these inputs:
+    # Validate cell metadata columns
+    required_obs_columns = [
+        cell_cov_column,
+        cell_mc_column,
+        cell_percent_column,
+    ]
+
+    missing_obs_columns = [
+        column
+        for column in required_obs_columns
+        if column not in adata.obs.columns
+    ]
+
+    if missing_obs_columns:
+        raise KeyError(
+            "The following cell metadata columns are missing from "
+            f"adata.obs: {missing_obs_columns}"
+        )
+
+    # Validate gene metadata columns
+    required_var_columns = [
+        gene_cov_column,
+        gene_mc_column,
+        gene_percent_column,
+    ]
+
+    missing_var_columns = [
+        column
+        for column in required_var_columns
+        if column not in adata.var.columns
+    ]
+
+    if missing_var_columns:
+        raise KeyError(
+            "The following gene metadata columns are missing from "
+            f"adata.var: {missing_var_columns}"
+        )
+    
+    if n_mads < 0:
+        raise ValueError("n_mads must be non-negative.")
+
+    if min_gene_coverage < 0:
+        raise ValueError(
+            "min_gene_coverage must be non-negative."
+        )
+    
+    # check the gene cov and mc is reasonable:
+    for column in required_var_columns:
+        # compute the number of missing values:
+        number_nan = adata.var[column].isna().sum()
+        if verbose and number_nan > 0:
+            print(f"{number_nan} NAs found in gene level meta field {column}")
+    
+    # check the gene cov and mc is reasonable:
+    for column in required_obs_columns:
+        # compute the number of missing values:
+        number_nan = adata.obs[column].isna().sum()
+        if verbose and number_nan > 0:
+            print(f"{number_nan} NAs found in cell level meta field {column}")
+    
+    # make sure that the coverage and count are reasonable
+    if (adata.obs[cell_cov_column] < 0).any():
+        raise ValueError("Negative cell coverage values found.")
+
+    if (adata.obs[cell_mc_column] < 0).any():
+        raise ValueError("Negative cell methylated-count values found.")
+
+    if (adata.obs[cell_mc_column] > adata.obs[cell_cov_column]).any():
+        raise ValueError("Some cell methylated counts exceed cell coverage.")
+    
+    # document the original number of cells and original number of genes:
+    original_cell_num = adata.n_obs
+    original_gene_num = adata.n_vars
+    
+    ###########################################################################################
+    ######                                    QC CELLS                                   ######
+    ###########################################################################################
+    
+    # find the number of cells with low coverage:
+    cell_cov = adata.obs[cell_cov_column]
+    bad_cells = list(
+        adata.obs.index[
+            ~np.isfinite(cell_cov)
+            | (cell_cov <= 0)
+        ]
+    )
+    
+    if verbose:
+        print('\n Cells coverage QC:')
+        print(
+            f"   Cells with invalid or non-positive coverage: "
+            f"   {len(bad_cells)}"
+        )
+    
+    # remove the low coverage cells:
+    adata.obs["qc_low_coverage"] = adata.obs.index.isin(bad_cells)
+    adata = adata[~adata.obs["qc_low_coverage"], :].copy()
+    
+    if adata.n_obs == 0:
+        raise ValueError(
+            "No cells remain after removing cells with "
+            "invalid or non-positive coverage."
+        )
+    
+    # deploy a mad filter if true:
+    if mad_coverage_filter:
+        # calculate the log1p of the coverage for each cell:
+        adata.obs['log1p_total_cov'] = np.log1p(adata.obs[cell_cov_column])
+        median_log_cov = adata.obs['log1p_total_cov'].median()
+    
+        # compute the median absolute deviation:
+        mad_log_cov = np.median(np.abs(adata.obs.log1p_total_cov - median_log_cov))
+        
+        if np.isclose(mad_log_cov, 0):
+            # Edge case where at least half of cells have exactly
+            # the median log1p coverage value.
+            lower_log_cov_cutoff = None
+            low_coverage_cells = []
+            bad_cells = []
+        
+        else:
+            # Define the lower coverage:
+            lower_log_cov_cutoff = (median_log_cov - n_mads * mad_log_cov)
+            
+            # Find the cells that has lower than this in coverage:
+            low_coverage_cells = list(adata.obs.index[adata.obs['log1p_total_cov'] < lower_log_cov_cutoff])
+            
+            # add them to bad cell list:
+            bad_cells = low_coverage_cells
+        
+        if verbose:
+            print("\nCell median absolute deviation coverage QC:")
+            print(
+                f"  Median log1p coverage: "
+                f"{median_log_cov:.3f}"
+            )
+            
+            print(
+                f"  Median absolute deviation: "
+                f"{mad_log_cov:.3f}"
+            )
+            
+            if lower_log_cov_cutoff is None:
+                print(
+                    "  Lower log1p coverage cutoff: undefined "
+                    "(MAD is zero; skipping MAD filtering)"
+                )
+            else:
+                print(
+                    f"  Lower log1p coverage cutoff: "
+                    f"{lower_log_cov_cutoff:.3f}"
+                )
+                
+            print(
+                f"  Number of low coverage cells being filtered because of MAD: "
+                f"{len(bad_cells)}"
+            )
+        
+        # remove the low coverage cells:
+        adata.obs["qc_low_coverage"] = adata.obs.index.isin(bad_cells)
+        adata = adata[~adata.obs["qc_low_coverage"], :].copy()
+    
+    ###########################################################################################
+    ######                               quality control genes                           ######
+    ###########################################################################################
+    # Remove genes with non-finite or non positive total coverage:
+    gene_cov = adata.var[gene_cov_column]
+    bad_genes = list(
+        adata.var.index[
+            ~np.isfinite(gene_cov)
+            | (gene_cov <= 0)
+        ]
+    )
+    
+    # remove the low coverage genes:
+    adata.var["qc_low_coverage"] = adata.var.index.isin(bad_genes)
+    adata = adata[:, ~adata.var["qc_low_coverage"]].copy()
+    
+    # print message:
+    if verbose:
+        print('\n Gene coverage QC:')
+        print(
+            f"   Genes with invalid or non-positive coverage: "
+            f"   {len(bad_genes)}"
+        )
+    
+    if adata.n_vars == 0:
+        raise ValueError(
+            "No genes remain after removing genes with "
+            "invalid or non-positive coverage."
+        )
+    
+    # also do some hard cutoff filtering for each gene:
+    gene_cov = adata.var[gene_cov_column]
+    bad_genes = list(adata.var.index[gene_cov < min_gene_coverage])
+    
+    # remove the low coverage genes:
+    adata.var["qc_low_coverage"] = adata.var.index.isin(bad_genes)
+    adata = adata[:, ~adata.var["qc_low_coverage"]].copy()
+    
+    # raise error on the adata if all genes are removed
+    if adata.n_vars == 0:
+        raise ValueError(
+            "No genes remain after applying the minimum "
+            "gene-coverage threshold."
+        )
+    
+    removed_cell_n = original_cell_num - adata.n_obs
+    removed_gene_n = original_gene_num - adata.n_vars
+    
+    if verbose:
+        print('\n Gene coverage QC:')
+        print(
+            f"   Genes with less than coverage of {min_gene_coverage}: "
+            f"   {len(bad_genes)}"
+        )
+        
+        print('\n Summaries::')
+        print(
+            f"   {removed_cell_n} cells removed"
+            f"   {removed_gene_n} genes removed"
+        )
+    
+    # return the results
+    return adata, removed_cell_n, removed_gene_n
+
 def normalize(
     h5ad_obj,
     method : str = 'inverse',
