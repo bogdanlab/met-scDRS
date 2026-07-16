@@ -71,7 +71,7 @@ names(risk.score) <- score.files;
 
 mdd = data.frame(
     fread(
-        file =  "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/baseline_promoter_CHN/PASS_MDD_Howard2019.score.gz",
+        file =  paste0(scDRS.directory, "/PASS_MDD_Howard2019.score.gz"),
         sep = '\t',
         header = TRUE,
         data.table = FALSE

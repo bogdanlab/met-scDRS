@@ -77,3 +77,63 @@ Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/
     --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-fraction-mcg-cell-exon-type-significance-proportion_brain.png" \
     --plot_type "proportion" \
     --color_scale_max 0.5
+
+###########################################################################################
+######                    Visualize single cell non-CpG with QC                      ######
+###########################################################################################
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/visualization/proportion_auto.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_exon_CHN/" \
+    --meta_data '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv' \
+    --field "newL3" \
+    --cutoff 0.1 \
+    --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mch-exon-cell-type-significance-proportion.png" \
+    --plot_type "proportion" \
+    --color_scale_max 0.5
+
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/visualization/proportion_auto.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_promoter_CHN/" \
+    --meta_data '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv' \
+    --field "newL3" \
+    --cutoff 0.1 \
+    --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mch-promoter-cell-type-significance-proportion.png" \
+    --plot_type "proportion" \
+    --color_scale_max 0.5
+
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/visualization/proportion_auto.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_intron_CHN/" \
+    --meta_data '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv' \
+    --field "newL3" \
+    --cutoff 0.1 \
+    --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mch-intron-cell-type-significance-proportion.png" \
+    --plot_type "proportion" \
+    --color_scale_max 0.5
+
+###########################################################################################
+######                      Visualize single cell CpG with QC                        ######
+###########################################################################################
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/visualization/proportion_auto.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_exon_CGN/" \
+    --meta_data '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv' \
+    --field "newL3" \
+    --cutoff 0.1 \
+    --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mcg-exon-cell-type-significance-proportion.png" \
+    --plot_type "proportion" \
+    --color_scale_max 0.5
+
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/visualization/proportion_auto.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_promoter_CGN/" \
+    --meta_data '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv' \
+    --field "newL3" \
+    --cutoff 0.1 \
+    --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mcg-promoter-cell-type-significance-proportion.png" \
+    --plot_type "proportion" \
+    --color_scale_max 0.5
+
+Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/visualization/proportion_auto.R \
+    --dir "/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_intron_CGN/" \
+    --meta_data '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv' \
+    --field "newL3" \
+    --cutoff 0.1 \
+    --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mcg-intron-cell-type-significance-proportion.png" \
+    --plot_type "proportion" \
+    --color_scale_max 0.5
