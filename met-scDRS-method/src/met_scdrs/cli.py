@@ -201,8 +201,8 @@ def compute_score(
                 "unless --h5ad-species==--gs-species"
             )
     # matching control genes should be mean_var:
-    if CTRL_MATCH_OPT not in ["mean_var_length", "mean_var", "mean", "var", "mean_length", "var_length"]:
-        raise ValueError("--ctrl_match_opt mean_var should be one of mean_var_length, mean_var, mean, var, mean_length, var_length")
+    if CTRL_MATCH_OPT not in ["mean_var_density", "mean_var_length", "mean_var", "mean", "var", "mean_length", "var_length"]:
+        raise ValueError("--ctrl_match_opt mean_var should be one of mean_var_density, mean_var_length, mean_var, mean, var, mean_length, var_length")
     if WEIGHT_OPT not in ['inv_std', 'vs']:
         raise ValueError("--weight_opt should be inv_std or vs")
     # also check folder:

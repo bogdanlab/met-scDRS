@@ -537,6 +537,8 @@ def preprocess(
     n_mean_bin=10,
     n_var_bin=10,
     n_length_bin=10,
+    n_density_bin=10,
+    density_numerator:str = 'total_cov',
     n_chunk=None,
     copy=False,
     verbose = True,
@@ -583,6 +585,10 @@ def preprocess(
         Number of expression-variance bins for matching control genes.
     n_length_bin : int, default = 10
         Number of gene length bins for matching control genes.
+    n_density_bin: int, default = 10
+        Number of density bins for matching control genes
+    density_numerator:str = 'total_cov'
+        what is the density of, by default total coverage of a gene
     n_chunk : int, default=None
         Number of chunks to split the data into when computing mean and variance
         using _get_mean_var_implicit_cov_corr. If n_chunk is None, set to 5/sparsity.
@@ -736,6 +742,8 @@ def preprocess(
         n_mean_bin=n_mean_bin,
         n_var_bin=n_var_bin,
         n_length_bin=n_length_bin,
+        density_numerator=density_numerator,
+        n_density_bin=n_density_bin,
         n_chunk=n_chunk,
         verbose = verbose
     )
@@ -762,6 +770,8 @@ def compute_stats(
     n_mean_bin=10,
     n_var_bin=10,
     n_length_bin=10,
+    n_density_bin=10,
+    density_numerator:str = 'total_cov',
     n_chunk=20,
     verbose = True,
 ):
@@ -924,8 +934,26 @@ def compute_stats(
     ###########################################################################################
     ######               rework scDRS control gene matching                              ######
     ###########################################################################################
-    bin_param = {'mean': n_mean_bin, 'var': n_var_bin, 'length': n_length_bin}
+    bin_param = {'mean': n_mean_bin, 'var': n_var_bin, 'length': n_length_bin, 'density': n_density_bin}
     bin_counts = {k: bin_param[k] for k in ctrl_match_key.split('_') if k in bin_param}
+    
+    # if matching by density, both gene length and coverage should be available:
+    if 'density' in bin_counts.keys():
+        print(f"{df_gene['length'].isna().sum()} genes are removed because no length available")
+        assert all(df_gene.index == adata.var.index)
+        df_gene[density_numerator] = adata.var[density_numerator]
+        print(f"{df_gene[density_numerator].isna().sum()} genes are removed because no {density_numerator} available")
+        
+        # QC the length and density numerator.
+        valid_gene = (
+            df_gene["length"].notna()
+            & df_gene[density_numerator].notna()
+            & (df_gene["length"] > 0)
+        )
+        df_gene = df_gene.loc[valid_gene, :].copy()
+        
+        # compute the density:
+        df_gene['density'] = df_gene[density_numerator] / df_gene['length']
     
     # if require matching by length, remove the genes that we cnanot find length info
     if 'length' in bin_counts.keys():
@@ -955,10 +983,6 @@ def compute_stats(
     
     return df_gene, df_cell
 
-
-
-
-
 ##############################################################################
 ######################## Preprocessing Subroutines ###########################
 ##############################################################################
@@ -978,10 +1002,10 @@ def _assign_gene_to_bins(df, ctrl_match_key, bin_counts):
     """
     # assertion:
     assert set(bin_counts.keys()) == set(ctrl_match_key.split('_')), "bin_counts keys do not match ctrl_match_key"
-    
     features = ctrl_match_key.split('_')
     df = df.copy()
     bin_label_cols = []
+    print('getting the control genes')
 
     for feature in features:
         new_bin = pd.Series(pd.NA, index=df.index, dtype="Int64")
@@ -1000,11 +1024,14 @@ def _assign_gene_to_bins(df, ctrl_match_key, bin_counts):
                     labels=False,
                     duplicates='drop'
                 ).astype("Int64")
-                new_bin.loc[valid.index] = binned
+                
+                # tested to yield identical result as previous code, but modified for cleaner intent:
+                # new_bin.loc[valid.index] = binned
+                new_bin.loc[binned.index] = binned # this gives identical result as previous
             except ValueError:
                 # If not enough values to bin, keep NA
                 pass
-
+        
         col_name = f"{feature}_bin"
         df[col_name] = new_bin
         bin_label_cols.append(col_name)
