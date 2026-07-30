@@ -16,9 +16,11 @@ year_month_day = date.today().strftime("%Y-%m-%d")
 ######                                    DATA LOADING                               ######
 ###########################################################################################
 # load in the results for the scDRS:
-trx_dir = "/u/project/geschwind/lixinzhe/scDRS-output/scDRS-output/AIBS-psych-trait-scDRS/without_cov/"
-# trx_dir = '/u/project/geschwind/lixinzhe/scDRS-output/scDRS-output/AIBS-psych-trait-scDRS/with_cov/'
-met_dir = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_gene_body_CHN/'
+# trx_dir = "/u/project/geschwind/lixinzhe/scDRS-output/scDRS-output/AIBS-psych-trait-scDRS/without_cov/"
+# met_dir = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_gene_body_CHN/'
+trx_dir = '/u/project/geschwind/lixinzhe/scDRS-output/scDRS-output/AIBS-psych-trait-scDRS/with_cov/'
+met_dir = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_gene_body_CHN/full/'
+
 plot_dir = '/u/home/l/lixinzhe/project-geschwind/plot/'
 
 # load in five different diseases:
