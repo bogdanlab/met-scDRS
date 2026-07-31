@@ -12,8 +12,10 @@ import os
 import gc
 
 pd.set_option('display.max_columns', None)
-merged_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted/merged'
-output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted/merged_QCed/'
+# merged_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted/merged'
+# output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted/merged_QCed/'
+merged_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/feature_agg_with_coverage/merged'
+output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/feature_agg_with_coverage/merged_QCed/'
 
 # for each of the feature, we can do this preprocessing:
 os.makedirs(f"{output_dir}", exist_ok = True)
@@ -40,7 +42,7 @@ num_genes_filtered_df = pd.DataFrame(
 
 for feature in features:
     for mc_type in mc_types:
-        h5ad_path = f"{merged_dir}/merged_07132026_{mc_type}_{feature}_raw.h5ad"
+        h5ad_path = f"{merged_dir}/merged_07302026_{mc_type}_{feature}_fraction_raw.h5ad"
         
         # load in the h5ad path:
         tqdm.write(f"Loading {h5ad_path}")

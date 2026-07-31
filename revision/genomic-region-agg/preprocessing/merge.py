@@ -19,7 +19,7 @@ tien_30k = "/u/project/geschwind/lixinzhe/data/GSE215353/Tien30k/Tien30k_0709202
 tien_40k = "/u/project/geschwind/lixinzhe/data/GSE215353/Tien40k/Tien40k_07092026.mcds"
 tien_50k = "/u/project/geschwind/lixinzhe/data/GSE215353/Tien50k/Tien50k_07092026.mcds"
 files_to_loop = [tien_10k, tien_20k, tien_30k, tien_40k, tien_50k]
-output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted'
+output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/feature_agg_with_coverage/'
 os.makedirs(f"{output_dir}/merged/", exist_ok = True)
 
 # initiate the empty list:
@@ -27,6 +27,7 @@ file_path = []
 file_base = []
 file_mc_type = []
 file_feature_space = []
+file_type = []
 
 # obtain which file information on what is the path, 10K, mc_type and feature space
 for file in files_to_loop:
@@ -37,20 +38,33 @@ for file in files_to_loop:
             file_base.append(output_base)
             file_mc_type.append(mc_type)
             file_feature_space.append(feature_space)
+            file_type.append('fraction')
+
+for file in files_to_loop:
+    for feature_space in ['promoter', 'exon', 'intron']:
+        for mc_type in ['CHN', 'CGN']:
+            output_base = re.sub('.mcds', '', re.sub('.*/', '', file))
+            file_path.append(f"{output_dir}/{output_base}_{mc_type}_{feature_space}_cov_only.h5ad")
+            file_base.append(output_base)
+            file_mc_type.append(mc_type)
+            file_feature_space.append(feature_space)
+            file_type.append('coverage')
+
 
 # group this into a data frame:
 file_info = pd.DataFrame({
     "file_path": file_path,
     "file_base": file_base,
     "file_mc_type": file_mc_type,
-    "file_feature_space": file_feature_space
+    "file_feature_space": file_feature_space,
+    'file_type': file_type
     }
 )
 
 ###########################################################################################
 ######        Aggregate within each feature space, and mc type across base           ######
 ###########################################################################################
-file_groups = file_info.groupby(["file_mc_type", "file_feature_space"])
+file_groups = file_info.groupby(["file_mc_type", "file_feature_space", "file_type"])
 
 # these variables are gene meta that are specific to each batch of the merge, so we should rename:
 batch_var_columns = [
@@ -60,7 +74,7 @@ batch_var_columns = [
 ]
 
 # for each group, aggregate:
-for (mc_type, feature), sub in file_groups:
+for (mc_type, feature, data_type), sub in file_groups:
     
     # initiate empty adata:
     merged_adata = None
@@ -148,4 +162,4 @@ for (mc_type, feature), sub in file_groups:
     assert (merged_adata.var['total_mc'] <= merged_adata.var['total_cov']).all()
     
     # output:
-    merged_adata.write_h5ad(f"{output_dir}/merged/merged_{today}_{mc_type}_{feature}_raw.h5ad")
+    merged_adata.write_h5ad(f"{output_dir}/merged/merged_{today}_{mc_type}_{feature}_{data_type}_raw.h5ad")

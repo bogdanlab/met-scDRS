@@ -22,13 +22,14 @@ import gc
 
 # load in the mcds:
 files_to_loop = [tien_10k, tien_20k, tien_30k, tien_40k, tien_50k]
-output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted'
+# output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/extracted'
+output_dir = '/u/project/geschwind/lixinzhe/data/GSE215353/feature_agg_with_coverage/'
 os.makedirs(output_dir, exist_ok=True)
 
 ###########################################################################################
 ######                                  Define function                              ######
 ###########################################################################################
-def get_fraction(mcsds_path, var_dim, mc_type):
+def get_fraction(mcsds_path, var_dim, mc_type, return_cov:bool = False):
     """
     Convert All Cools MCDS region file into a h5ad
     
@@ -40,8 +41,9 @@ def get_fraction(mcsds_path, var_dim, mc_type):
         feature variable, should be promoter, exon or intron
     mc_type: str
         methylation type to extract, should be either CHN or CGN
-    out_h5ad: str
-        path to output the h5ad file
+    return_cov: bool
+        should the cell by feature coverage matrix be returned
+    
     
     Output:
     -------
@@ -119,6 +121,9 @@ def get_fraction(mcsds_path, var_dim, mc_type):
         # internal marker:
         var_names = unique_genes
         collapsed_from_intervals = True
+        
+        # set the coverage:
+        cov_np = cov_gene
     
     else:
         # define the fraction:
@@ -137,6 +142,7 @@ def get_fraction(mcsds_path, var_dim, mc_type):
         # get the variable names for naming the dataframe later:
         var_names = mcds[var_dim].values
         collapsed_from_intervals = False
+        cov_np = cov.compute().values
     
     # observation
     obs = pd.DataFrame(index=mcds["cell"].values)
@@ -172,13 +178,31 @@ def get_fraction(mcsds_path, var_dim, mc_type):
     var["mc_type"] = mc_type
     var["region_type"] = var_dim
     
+    # make sure all the shape is correct:
+    expected_shape = (obs.shape[0], var.shape[0])
+    assert frac_np.shape == expected_shape, (
+        f"Fraction shape {frac_np.shape} != expected {expected_shape}"
+    )
+    
     adata = ad.AnnData(
         X=frac_np,
         obs=obs,
         var=var,
     )
     adata.X = np.nan_to_num(adata.X, nan=0.0)
-    return adata
+
+    if return_cov:
+        assert cov_np.shape == expected_shape, (
+            f"Coverage shape {cov_np.shape} != expected {expected_shape}"
+        )
+        cov_adata = ad.AnnData(
+            X=cov_np,
+            obs=obs.copy(),
+            var=var.copy(),
+        )
+        return adata, cov_adata
+    else:
+        return adata
 
 ###########################################################################################
 ######                                    Process mch                                ######
@@ -186,10 +210,12 @@ def get_fraction(mcsds_path, var_dim, mc_type):
 for file in files_to_loop:
     for feature_space in ['promoter', 'exon', 'intron']:
         for mc_type in ['CHN', 'CGN']:
-            h5ad = get_fraction(mcsds_path = file, var_dim = feature_space, mc_type = mc_type)
+            h5ad, cov_adata = get_fraction(mcsds_path = file, var_dim = feature_space, mc_type = mc_type, return_cov = True)
             output_base = re.sub('.mcds', '', re.sub('.*/', '', file))
             h5ad.write_h5ad(f"{output_dir}/{output_base}_{mc_type}_{feature_space}_extracted.h5ad")
+            cov_adata.write_h5ad(f"{output_dir}/{output_base}_{mc_type}_{feature_space}_cov_only.h5ad")
             print(f'extracted data written to {output_dir}/{output_base}_{mc_type}_{feature_space}_extracted.h5ad')
             del h5ad
+            del cov_adata
             gc.collect()
 
