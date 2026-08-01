@@ -41,7 +41,7 @@ weight_opt="$5"
 diagnostic_dir="$6"
 output_dir="$7"
 
-# NOTE, the last (6th argument must be covariate file, otherwise interpretted incorrectly)
+# NOTE, the last (8th argument must be covariate file, otherwise interpretted incorrectly)
 cov_file="$8"
 
 DIR="/u/scratch/l/lixinzhe/tmp-file/tmp-gs/"
@@ -86,7 +86,7 @@ if [ -n "$cov_file" ]; then
         --weight_opt ${weight_opt} \
         --n_ctrl 1000 \
         --flag_return_ctrl_raw_score False \
-        --flag_return_ctrl_norm_score True \
+        --flag_return_ctrl_norm_score False \
         --diagnostic True \
         --diagnostic_dir ${diagnostic_dir} \
         --verbose True
