@@ -25,11 +25,11 @@ plot_dir = '/u/home/l/lixinzhe/project-geschwind/plot/'
 
 # load in five different diseases:
 traits = [
-    'PASS_Alzheimers_Jansen2019.score.gz',
-    'PASS_BIP_Mullins2021.score.gz',
     'PASS_MDD_Howard2019.score.gz',
-    'PASS_Schizophrenia_Pardinas2018.score.gz',
-    'UKB_460K.body_HEIGHTz.score.gz'
+    'PASS_Alzheimers_Jansen2019.score.gz'
+    # 'PASS_BIP_Mullins2021.score.gz',
+    # 'PASS_Schizophrenia_Pardinas2018.score.gz',
+    # 'UKB_460K.body_HEIGHTz.score.gz'
 ]
 
 trx_score = {}
