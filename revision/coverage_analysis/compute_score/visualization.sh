@@ -19,4 +19,4 @@ Rscript /u/home/l/lixinzhe/project-github/met-scDRS/revision/genomic-region-agg/
     --cutoff 0.1 \
     --out "/u/home/l/lixinzhe/project-geschwind/plot/${current_date}-revision-GSE215353-50k-qc-mcg-gene-body-cell-type-significance-proportion.png" \
     --plot_type "proportion" \
-    --color_scale_max 1
+    --color_scale_max 0.5

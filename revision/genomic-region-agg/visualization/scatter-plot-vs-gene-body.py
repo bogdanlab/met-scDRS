@@ -15,12 +15,16 @@ from statsmodels.stats.multitest import multipletests
 disease_score_name = 'PASS_MDD_Howard2019.score.gz'
 
 # path for gene body, after QC but no correction
-gene_body_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_gene_body_CHN/'
+#gene_body_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_gene_body_CHN/'
+gene_body_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_gene_body_CHN/full/'
 
 # also for different aggregation after QC but no correction:
-promoter_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_promoter_CHN/'
-intron_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_intron_CHN/'
-exon_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_exon_CHN/'
+# promoter_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_promoter_CHN/'
+# intron_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_intron_CHN/'
+# exon_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_exon_CHN/'
+promoter_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_promoter_CHN/full/'
+intron_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_intron_CHN/full/'
+exon_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_exon_CHN/full/'
 
 # load in the score
 gene_body_mdd = pd.read_table(f"{gene_body_path}{disease_score_name}", index_col = 0)
@@ -150,12 +154,17 @@ plt.close(fig)
 ######                                    Extend to CpG                              ######
 ###########################################################################################
 # path for gene body, after QC but no correction
-gene_body_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_gene_body_CGN/'
+# gene_body_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_gene_body_CGN/'
+gene_body_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_gene_body_CGN/full/'
 
 # also for different aggregation after QC but no correction:
-promoter_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_promoter_CGN/'
-intron_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_intron_CGN/'
-exon_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_exon_CGN/'
+# promoter_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_promoter_CGN/'
+# intron_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_intron_CGN/'
+# exon_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_exon_CGN/'
+
+promoter_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_promoter_CGN/full/'
+intron_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_intron_CGN/full/'
+exon_path = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_exon_CGN/full/'
 
 # load in the score
 gene_body_mdd = pd.read_table(f"{gene_body_path}{disease_score_name}", index_col = 0)
