@@ -9,7 +9,7 @@ require(circlize);
 
 # load in data:
 significance.matrix <- read.table(
-    file = '/u/home/l/lixinzhe/project-geschwind/plot/2025-08-01-revision-GSE215353-production-fraction-mch-cell-type-significance-proportion.csv',
+    file = '/u/home/l/lixinzhe/project-geschwind/plot/archive_png_before_feb2_2026/2025-08-01-revision-GSE215353-production-fraction-mch-cell-type-significance-proportion.csv',
     sep = ',',
     row.names = 1,
     header = TRUE,
@@ -94,14 +94,14 @@ column.split = c(
 col.fun <- colorRamp2(
     c(
         0,
-        0.7
+        0.4
         ),
     c('white', '#de2d26')
     );
 heatmap.legend.param <- list(
     at = c(
         0,
-        0.7
+        0.4
         )
     );
 
