@@ -9,7 +9,7 @@ require(circlize);
 
 # load in data:
 significance.matrix <- read.table(
-    file = '/u/home/l/lixinzhe/project-geschwind/plot/2025-08-07-v1.1rc-GSE215353-subset-fraction-mcg-cell-type-significance-proportion.csv',
+    file = '/u/home/l/lixinzhe/project-geschwind/plot/2026-08-03-revision-GSE215353-50k-qc-mcg-gene-body-cell-type-significance-proportion.csv',
     sep = ',',
     row.names = 1,
     header = TRUE,
@@ -41,67 +41,48 @@ rownames(significance.matrix) <- gsub('UKB_460K.', '', rownames(significance.mat
 rownames(significance.matrix) <- gsub('cov_', '', rownames(significance.matrix))
 rownames(significance.matrix) <- gsub('repro_', '', rownames(significance.matrix))
 
-cell.type.order <- c(
-    "L2/3-IT",
-    "L4-IT",
-    "L5-ET",
-    "L5-IT",
-    "L5/6-NP",
-    "L6-CT",
-    "L6-IT",
-    "L6-IT-Car3",
-    "L6b",
-    "Amy-Exc",
-    "CA1",
-    "CA3",
-    "DG",
-    "HIP-Misc1",
-    "HIP-Misc2",
-    "CB",
-    "Chd7",
-    "Foxp2",
-    "MSN-D1",
-    "MSN-D2",
-    "PKJ",
-    "PN",
-    "Lamp5",
-    "Lamp5-Lhx6",
-    "Pvalb",
-    "Pvalb-ChC",
-    "Sncg",
-    "Sst",
-    "SubCtx-Cplx",
-    "THM-Exc",
-    "THM-Inh",
-    "THM-MB",
-    "Vip",
-    "ASC",
-    "EC",
-    "MGC",
-    "ODC",
-    "OPC",
-    "PC",
-    "VLMC"
-    );
+cell.types <- colnames(significance.matrix)
+excitatory = sort(cell.types[grep('^Exc', cell.types)])
+inhibitory = sort(cell.types[grep('^Inh', cell.types)])
+others = setdiff(cell.types, c(excitatory, inhibitory))
+
+cell.type.order = c(
+    excitatory,
+    inhibitory,
+    others
+    )
+
+# remove the cell class form the columm names
+cell.type.order <- gsub('Exc_', '', cell.type.order )
+cell.type.order <- gsub('Inh_', '', cell.type.order )
+cell.type.order <- gsub('Glial_', '', cell.type.order )
+cell.type.order <- gsub('NN_', '', cell.type.order )
+
+colnames(significance.matrix) <- gsub('Exc_', '', colnames(significance.matrix))
+colnames(significance.matrix) <- gsub('Inh_', '', colnames(significance.matrix))
+colnames(significance.matrix) <- gsub('Glial_', '', colnames(significance.matrix))
+colnames(significance.matrix) <- gsub('NN_', '', colnames(significance.matrix))
+
 
 column.split = c(
-    rep('Excitatory', 15),
-    rep('Inhibitory', 18),
-    rep('Others', 7)
+    rep('Excitatory', length(excitatory)),
+    rep('Inhibitory', length(inhibitory)),
+    rep('Others', length(others))
     )
 
 # make color function
 col.fun <- colorRamp2(
     c(
         0,
-        1
+        0.5
         ),
     c('white', '#de2d26')
     );
+
 heatmap.legend.param <- list(
     at = c(
         0,
-        1
+        0.5
         )
     );
 
