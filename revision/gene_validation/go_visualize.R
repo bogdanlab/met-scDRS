@@ -24,6 +24,23 @@ ontology_gene_num <- 100;
 all_cor = read.table("/u/home/l/lixinzhe/project-geschwind/port/scDRS/test_gene_methylation_score_correlations.tsv", sep = '\t', header = TRUE)
 gsea.c5 <- read.gmt('/u/project/geschwind/lixinzhe/data/c5.all.v2023.1.Hs.entrez.gmt');
 
+###########################################################################################
+######                               Output the Bipolar and MDD Correlation          ######
+###########################################################################################
+diseases = c('PASS_BIP_Mullins2021', 'PASS_MDD_Howard2019')
+for (disease in diseases){
+    disease_cor = all_cor[all_cor$trait == disease, ]
+    disease_cor = disease_cor[order(disease_cor$corr), ]
+    top_genes = tail(disease_cor, ontology_gene_num)
+    
+    # output:
+    file_pth = '/u/scratch/l/lixinzhe/tmp-file/tmp-plot/top_genes_correlation/'
+    write.table(top_genes, sep = '\t', row.names = FALSE, file = paste0(file_pth, disease, 'top_correlated_genes.tsv'))
+}
+
+###########################################################################################
+######                                    Make Plots                                 ######
+###########################################################################################
 
 # for the highest correlation genes, get the gene ontology:
 diseases = unique(all_cor$trait)
