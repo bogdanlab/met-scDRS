@@ -8,21 +8,18 @@ require(ComplexHeatmap);
 require(circlize);
 
 # load in data:
-meta.data.path <- '/u/home/l/lixinzhe/project-geschwind/data/GSE215353/processed/production/meta_data.csv'
-meta <- read.csv(
-    header = TRUE,
-    row.names = 1,
-    file = meta.data.path
-    );
+# meta = read.table('/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/meta_data_50k.tsv', sep = '\t', row.names = 1)
+meta = read.table("/u/home/l/lixinzhe/project-geschwind/port/scratch/met_scdrs_dev/joint_umap_coords_281146.csv", sep = ',', row.names = 1, header = TRUE)
 
 # read in the results:
 trait.score <- read.table(
-    file = '/u/home/l/lixinzhe/project-geschwind/port/scratch/revision/v1.1/ges215353_mcg_75K_subset_knn/mean_var_length_with_cov/PASS_MDD_Howard2019.score.gz',
+    file = '/u/home/l/lixinzhe/project-cluo/result/met-scDRS/revision/ges215353_50k/qc_regression_gene_body_CGN/full/PASS_MDD_Howard2019.score.gz',
     sep = '\t',
     header = TRUE,
     row.names = 1,
     stringsAsFactors = FALSE
     )
+rownames(trait.score) = gsub('.allc.tsv.gz', '', rownames(trait.score))
 trait.score$fdr <- p.adjust(trait.score$pval, method = 'fdr')
 system.date <- Sys.Date()
 
@@ -31,9 +28,11 @@ system.date <- Sys.Date()
 p.cutoff <- 0.1
 significant.cell <- rownames(trait.score)[trait.score$fdr < p.cutoff]
 insignificant.cell <- setdiff(rownames(trait.score), significant.cell)
-plot.df <- trait.score
-plot.df$umap1 <- meta[rownames(plot.df), 'UMAP_1']
-plot.df$umap2 <- meta[rownames(plot.df), 'UMAP_2']
+
+shared_cells = intersect(rownames(meta), rownames(trait.score))
+plot.df <- trait.score[shared_cells, ]
+plot.df$umap1 <- meta[shared_cells, 'X_umap']
+plot.df$umap2 <- meta[shared_cells, 'Y_umap']
 
 gplot <- ggplot(plot.df, aes(x = umap1, y = umap2)) +
     geom_point(data = plot.df[insignificant.cell, ], colour = 'grey') +
