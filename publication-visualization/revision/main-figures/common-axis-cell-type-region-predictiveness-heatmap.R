@@ -212,28 +212,69 @@ selected.region = gsub('-', ' ', selected.region)
 selected.plot.df <- wide.plot.df[selected.region, selected.cell.type]
 
 # Now create the heatmap:
-col.fun <- colorRamp2(
-    c(
-        min(filtered$average, na.rm = TRUE),
-        0,
-        max(filtered$average, na.rm = TRUE)
-        ),
-    c('#0571b0', 'white', '#ca0020')
-    );
-heatmap.legend.param <- list(
-    at = c(
-        round(
-            min(filtered$average, na.rm = TRUE),
-            digit = 2 # round to 2 digit
-            ),
-        0,
-        round(
-            max(filtered$average, na.rm = TRUE),
-            digit = 2 # round to 2 digit
-            )
-        )
-    );
+# col.fun <- colorRamp2(
+#     c(
+#         min(filtered$average, na.rm = TRUE),
+#         0,
+#         max(filtered$average, na.rm = TRUE)
+#         ),
+#     c('#0571b0', 'white', '#ca0020')
+#     );
+# heatmap.legend.param <- list(
+#     at = c(
+#         round(
+#             min(filtered$average, na.rm = TRUE),
+#             digit = 2 # round to 2 digit
+#             ),
+#         0,
+#         round(
+#             max(filtered$average, na.rm = TRUE),
+#             digit = 2 # round to 2 digit
+#             )
+#         )
+#     );
 
+# tune color scale:
+vals <- as.numeric(as.matrix(selected.plot.df))
+vals <- vals[is.finite(vals)]
+
+neg.breaks <- quantile(
+    vals[vals < 0],
+    probs = c(0, 0.5, 1),
+    na.rm = TRUE
+)
+
+pos.breaks <- quantile(
+    vals[vals > 0],
+    probs = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+    na.rm = TRUE
+)
+
+breaks <- as.numeric(c(neg.breaks, 0, pos.breaks))
+breaks <- breaks[!duplicated(round(breaks, digits = 6))]
+
+cols <- colorRampPalette(
+    c(
+        "#2166ac",
+        "#92c5de",
+        "#d1e5f0",
+        "white",
+        "#fddbc7",
+        "#ef8a62",
+        "#b2182b"
+    )
+)(length(breaks))
+
+col.fun <- colorRamp2(
+    breaks,
+    cols
+)
+
+heatmap.legend.param <- list(
+    at = round(breaks, digits = 2),
+    labels = as.character(round(breaks, digits = 2))
+)
+# make the plot
 plot <- Heatmap(
     as.matrix(selected.plot.df),
     name = 'average\nmet-scdrs',
@@ -268,33 +309,29 @@ draw(plot, padding = unit(c(10, 10, 10, 30), "mm"));
 dev.off();
 
 # next draw the legend:
-lgd = Legend(
-    col_fun = col.fun, 
-    at = c(
-        round(
-            min(selected.plot.df, na.rm = TRUE),
-            digit = 2 # round to 2 digit
-            ),
-        0,
-        round(
-            max(selected.plot.df, na.rm = TRUE),
-            digit = 2 # round to 2 digit
-            )
-        ),
+legend.at <- c(-0.28, 0, 2.08)
+
+lgd <- Legend(
+    col_fun = col.fun,
+    at = legend.at,
+    labels = c("-0.28", "0", "2.08"),
     title = 'average\nmet-scDRS',
     title_gp = gpar(fontsize = 10),
     labels_gp = gpar(fontsize = 8)
-    )
+)
+
 plot.path <- paste0(output.path, system.date, '-region-cell-type-zscore-selected-heatmap-legend.png')
+
 png(
     filename = plot.path,
     width = 3,
     height = 3,
     units = 'in',
     res = 400
-    );
-draw(lgd);
-dev.off();
+)
+
+draw(lgd)
+dev.off()
 
 # write out the selected matrix:
 write.table(
