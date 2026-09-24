@@ -107,19 +107,37 @@ gplot <- ggplot(
     plot.df,
     aes(x = trait_class, y = average, fill = cell_type)) +
     geom_bar(stat="identity", position=position_dodge()) +
-    geom_errorbar(aes(ymin=average-sd, ymax=average+sd), width=.2,
+    geom_errorbar(aes(ymin=pmax(0, average - sd), ymax=average+sd), width=.2,
                     position=position_dodge(.9)) +
     theme_classic() +
-    scale_fill_manual(values = c(
-        "Non-neuronal Cells" = "#b3e2cd",
-        "Inhibitory and Subcortical Neurons" = "#cbd5e8",
-        'Excitatory Neurons' = '#fdcdac')
+    scale_fill_manual(
+        values = c(
+            "Non-neuronal Cells" = "#b3e2cd",
+            "Inhibitory and Subcortical Neurons" = "#cbd5e8",
+            'Excitatory Neurons' = '#fdcdac'),
+        labels = c(
+            "Non-neuronal Cells" = "Non-neuronal Cells",
+            "Inhibitory and Subcortical Neurons" = "Inhibitory and\nSubcortical Neurons",
+            "Excitatory Neurons" = "Excitatory Neurons"
+            )
         ) +
     xlab('Traits categories') +
     ylab('Average % significant cells in cell class') +
     labs(fill = "cell class") +
-    theme(legend.position = "none") +
     theme(text = element_text(size = 30))
+gplot$theme$legend.position.inside <- NULL
+
+gplot <- gplot +
+  theme(
+    legend.position = c(0.98, 0.98),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(
+      fill = scales::alpha("white", 0.85),
+      color = "grey75",
+      linewidth = 0.4
+    ),
+    legend.margin = margin(6, 8, 6, 8)
+  )
 
 output.path <- paste0(output.dir, system.date, '-scDRS-cell-class-by-disease-category-proportion.png')
 png(
@@ -128,6 +146,16 @@ png(
     height = 14,
     units = 'in',
     res = 400
+    );
+print(gplot)
+dev.off();
+
+# add a pdf output:
+output.path <- paste0('/u/home/l/lixinzhe/project-geschwind/plot/', system.date, '-scDRS-cell-class-by-disease-category-proportion.pdf')
+pdf(
+    file = output.path,
+    width = 17,
+    height = 14
     );
 print(gplot)
 dev.off();

@@ -129,3 +129,13 @@ png(
     );
 draw(plot, heatmap_legend_side = 'left', padding = unit(c(10, 10, 10, 70), "mm"));
 dev.off();
+
+# add a pdf output:
+output.path <- paste0('/u/home/l/lixinzhe/project-geschwind/plot/', system.date, '-CpG-cell-type-brain-traits-proportion.pdf')
+pdf(
+    file = output.path,
+    width = heatmap.width,
+    height = heatmap.height
+    );
+draw(plot, heatmap_legend_side = 'left', padding = unit(c(10, 10, 10, 70), "mm"));
+dev.off();

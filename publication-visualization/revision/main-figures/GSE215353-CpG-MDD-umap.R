@@ -58,3 +58,14 @@ png(
     );
 print(gplot)
 dev.off();
+
+# draw out the plot:
+output.dir <- '/u/home/l/lixinzhe/project-geschwind/plot/'
+output.path <- paste0(output.dir, system.date, '-MDD-CpG-scDRS-score-umap.pdf')
+pdf(
+    file = output.path,
+    width = 14,
+    height = 14
+    );
+print(gplot)
+dev.off();
