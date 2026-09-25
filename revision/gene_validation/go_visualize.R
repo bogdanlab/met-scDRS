@@ -85,6 +85,15 @@ for (disease in diseases){
     print(dot.plot);
     dev.off();
     
+    plot.name <- paste0(dot.path, system.date, '-', disease, '-gene-ontology-enrichment-dotplot.pdf')
+    pdf(
+        file = plot.name,
+        width = 10,
+        height = 10
+        );
+    print(dot.plot);
+    dev.off();
+    
     # deal with the network:
     cor_value = tail(disease_cor, ontology_gene_num)$corr
     names(cor_value) = tail(disease_cor, ontology_gene_num)$gene
@@ -114,6 +123,17 @@ for (disease in diseases){
     grid.draw(legend)
     dev.off()
     
+    plot.name <- paste0(network.path, system.date, '-', disease, '-gene-ontology-enrichment-network-legend.pdf')
+    pdf(
+        file = plot.name,
+        width = 10,
+        height = 10
+        );
+    legend <- cowplot::get_legend(network.plot);
+    grid.newpage()
+    grid.draw(legend)
+    dev.off()
+    
     # also get the network itself:
     plot.name <- paste0(network.path, system.date, '-', disease, '-gene-ontology-enrichment-network.png')
         network.plot <- network.plot + theme(legend.position = "none")
@@ -126,6 +146,16 @@ for (disease in diseases){
             );
         print(network.plot);
         dev.off();
+    
+    plot.name <- paste0(network.path, system.date, '-', disease, '-gene-ontology-enrichment-network.pdf')
+    network.plot <- network.plot + theme(legend.position = "none")
+    pdf(
+        file = plot.name,
+        width = 10,
+        height = 10
+        );
+    print(network.plot);
+    dev.off();
 }
     
     
