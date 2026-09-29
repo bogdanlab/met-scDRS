@@ -26,7 +26,7 @@ scene.add_brain_region('ITG', alpha = 1, color = '#66c2a5') # Inferior temproal 
 scene.add_brain_region('MTG', alpha = 1, color = '#e78ac3') #middle temporal gyrus
 scene.add_brain_region('LiG', alpha = 1, color = '#fdc086') # lingual gyrus - visual cortex
 
-# render scene:
-scene.render(camera = 'sagittal', interactive = False)
-scene.screenshot(name="IFG-MFG-ITG-MTG-LiG-render") 
+# Render and save as PDF
+scene.render(camera="sagittal", interactive=False)
+scene.screenshot(name="IFG-MFG-ITG-MTG-LiG-render.pdf")
 scene.close()

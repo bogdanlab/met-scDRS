@@ -113,6 +113,16 @@ png(
 print(gplot)
 dev.off();
 
+# add pdf:
+output.path <- paste0(output.dir, system.date, '-MDD-l23-lg-A46-itg-mtg-scDRS-score-boxplot.pdf')
+pdf(
+    file = output.path,
+    width = 8,
+    height = 7
+    );
+print(gplot)
+dev.off();
+
 print('average across selected brain regions among L2/3-IT')
 print(plot.df %>% group_by(tissue) %>% summarize(average = mean(score)))
 

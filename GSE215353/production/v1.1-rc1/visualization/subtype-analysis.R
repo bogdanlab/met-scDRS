@@ -122,6 +122,16 @@ for (trait in c('PASS_MDD_Howard2019.score.gz')){
                 );
             print(gplot.label)
             dev.off();
+            
+            # draw out the pdf of the subtype:
+            plot.path <- paste0("/u/home/l/lixinzhe/project-geschwind/plot/subtype-analysis/", system.date, '-GSE215353-', gsub('/','-', cell_type), '-subtype-with-legend-umap.pdf')
+            pdf(
+                file = plot.path,
+                width = 14,
+                height = 14
+                );
+            print(gplot.label)
+            dev.off();
 
             # also draw out the met-scDRS:
             significant.cell <- rownames(plot.df)[plot.df$fdr < p.cutoff]
@@ -313,6 +323,16 @@ for (trait in c('PASS_MDD_Howard2019.score.gz', 'PASS_BIP_Mullins2021.score.gz',
                 );
             print(gplot.label)
             dev.off();
+            
+            # draw out in pdf:
+            plot.path <- paste0("/u/home/l/lixinzhe/project-geschwind/plot/subtype-analysis/", system.date, '-GSE215353-', gsub('/','-', cell_type), '-subtype-with-legend-umap.pdf')
+            pdf(
+                file = plot.path,
+                width = 14,
+                height = 14
+                );
+            print(gplot.label)
+            dev.off();
 
             # also draw out the met-scDRS:
             significant.cell <- rownames(plot.df)[plot.df$fdr < p.cutoff]
@@ -343,6 +363,17 @@ for (trait in c('PASS_MDD_Howard2019.score.gz', 'PASS_BIP_Mullins2021.score.gz',
                 );
             print(gplot)
             dev.off();
+            
+            # draw out in pdf:
+            output.path <- paste0(output.dir, system.date, '-', disease_name, 'scDRS-score-umap-', gsub('/','-', cell_type), '-only.pdf')
+            pdf(
+                file = output.path,
+                width = 14,
+                height = 14
+                );
+            print(gplot)
+            dev.off();
+
         }
     }
 }

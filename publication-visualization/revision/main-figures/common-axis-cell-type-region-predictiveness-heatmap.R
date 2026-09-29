@@ -308,6 +308,16 @@ png(
 draw(plot, padding = unit(c(10, 10, 10, 30), "mm"));
 dev.off();
 
+# output a pdf version of the graph:
+plot.path <- paste0(output.path, system.date, '-region-cell-type-zscore-selected-heatmap.pdf')
+pdf(
+    file = plot.path,
+    width = heatmap.width,
+    height = heatmap.height
+    );
+draw(plot, padding = unit(c(10, 10, 10, 30), "mm"));
+dev.off();
+
 # next draw the legend:
 legend.at <- c(-0.28, 0, 2.08)
 
@@ -333,10 +343,22 @@ png(
 draw(lgd)
 dev.off()
 
+# output a pdf version of the legend:
+plot.path <- paste0(output.path, system.date, '-region-cell-type-zscore-selected-heatmap-legend.pdf')
+pdf(
+    file = plot.path,
+    width = 3,
+    height = 3
+    );
+draw(lgd)
+dev.off();
+
 # write out the selected matrix:
+table.path <- paste0(output.path, system.date, '-region-cell-type-zscore-selected-heatmap.csv')
+
 write.table(
     selected.plot.df,
-    file = gsub('png', 'csv', plot.path),
+    file = table.path,
     sep = ',',
     quote = FALSE,
     row.names = TRUE,
