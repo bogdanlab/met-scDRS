@@ -120,7 +120,7 @@ for (simulation.mode in names(scDRS.directories)) {
         geom_pointrange(aes(ymin = mean - 2 * sd, ymax= mean + 2 * sd)) + 
         theme_classic() +
         ylab(expression(-log[10]("observed p value"))) +
-        xlab(expression(-log[10]("theoratical p value"))) +
+        xlab(expression(-log[10]("theoretical p value"))) +
         geom_abline(slope = 1, intercept = 0) +
         scale_color_manual(
             values = c("one_hundred" = "#fbb4ae", "five_hundred" = "#b3cde3", "one_thousand" = "#ccebc5"),
@@ -139,6 +139,16 @@ for (simulation.mode in names(scDRS.directories)) {
         );
     print(gplot);
     dev.off();
+    
+    output.path = gsub('.png', '.pdf', output.path)
+    pdf(
+        file = output.path,
+        width = 5,
+        height = 5
+        );
+    print(gplot)
+    dev.off();
+    
 
     # make a duplicated plot but with the legend
     output.path <- paste0(
@@ -154,7 +164,7 @@ for (simulation.mode in names(scDRS.directories)) {
         geom_pointrange(aes(ymin = mean - 2 * sd, ymax= mean + 2 * sd)) + 
         theme_classic() +
         ylab(expression(-log[10]("observed p value"))) +
-        xlab(expression(-log[10]("theoratical p value"))) +
+        xlab(expression(-log[10]("theoretical p value"))) +
         geom_abline(slope = 1, intercept = 0) +
         scale_color_manual(
             values = c("one_hundred" = "#fbb4ae", "five_hundred" = "#b3cde3", "one_thousand" = "#ccebc5"),
@@ -172,6 +182,18 @@ for (simulation.mode in names(scDRS.directories)) {
         );
     print(gplot);
     dev.off();
+    
+    
+    output.path = gsub('.png', '.pdf', output.path)
+    pdf(
+        file = output.path,
+        width = 5,
+        height = 5
+        );
+    print(gplot)
+    dev.off();
+    
+    
     cat('the maximum standard deviation in calibration simulation is:', max(plot.df$sd), 'for simulation mode:', simulation.mode, '\n')
     }
 

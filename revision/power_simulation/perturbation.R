@@ -132,7 +132,8 @@ for (seed in seq(1, simulation.replication)){
                 '-causal-simulation.h5ad'
                 );
             # perform file check:
-            if (file.exists(h5ad.path)) {
+            file.path <- gsub('h5ad', 'csv', h5ad.path);
+            if (file.exists(h5ad.path) && file.exists(file.path)) {
                 # if the file already existed, print a message and do nothing:
                 cat('the perturbation file already exist! Skipping perturbation \n')
                 } else {
@@ -211,7 +212,6 @@ for (seed in seq(1, simulation.replication)){
             perturbation.log$causal.cells[duplicated(perturbation.log$causal.cells)] <- NA;
 
             # output the perturbation file:
-            file.path <- gsub('h5ad', 'csv', h5ad.path);
             write.table(perturbation.log, file = file.path, sep = ',', quote = FALSE, row.names = FALSE, col.names = TRUE);
 
             # tidy up:

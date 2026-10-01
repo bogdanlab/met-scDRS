@@ -148,6 +148,21 @@ for(simulation.mode in c('overlap', 'effect')) {
             );
         print(gplot);
         dev.off();
+        
+        output.path <- paste0(
+            '/u/home/l/lixinzhe/project-geschwind/plot/',
+            system.date,
+            '-fixed-',
+            simulation.mode,
+            '-power-effect-plot.pdf'
+            );
+        pdf(
+            file = output.path,
+            width = 5,
+            height = 5
+            );
+        print(gplot)
+        dev.off();
     }
 
     if (simulation.mode == 'effect') {
@@ -184,6 +199,21 @@ for(simulation.mode in c('overlap', 'effect')) {
             res = 400
             );
         print(gplot);
+        dev.off();
+        
+        output.path <- paste0(
+            '/u/home/l/lixinzhe/project-geschwind/plot/',
+            system.date,
+            '-fixed-',
+            simulation.mode,
+            '-power-effect-plot.pdf'
+            );
+        pdf(
+            file = output.path,
+            width = 5,
+            height = 5
+            );
+        print(gplot)
         dev.off();
     }
     cat('the maximum standard deviation across causal simulation is: ', max(plot.df$sd), '\n')
